@@ -73,16 +73,40 @@ async function run() {
           readiness: "calculator"
         },
         {
+          name: "Unit Converter",
+          selector: '#toolGrid button[aria-label="Open Unit Converter"]',
+          modal: "#unitConverterModal",
+          readiness: "unit-converter"
+        },
+        {
+          name: "World Clock",
+          selector: '#toolGrid button[aria-label="Open World Clock"]',
+          modal: "#worldClockModal",
+          readiness: "world-clock"
+        },
+        {
           name: "Currency",
           selector: '#toolGrid button[aria-label="Open Currency Exchange"]',
           modal: "#currencyModal",
           readiness: "currency"
         },
         {
+          name: "Timer",
+          selector: '#toolGrid button[aria-label="Open Timer and Stopwatch"]',
+          modal: "#timerModal",
+          readiness: "timer"
+        },
+        {
           name: "QR scanner",
           selector: "#qrScanShortcut",
           modal: "#qrModal",
           readiness: "qr"
+        },
+        {
+          name: "Guides",
+          selector: ".learn-link",
+          modal: "#guidesModal",
+          readiness: "guides"
         }
       ];
 
@@ -103,14 +127,40 @@ async function run() {
             return visible("#calculatorModal") && Boolean(document.querySelector("#calculatorGrid [data-value='1']"));
           }
           if (readiness === "currency") {
+            const result = document.querySelector("#currencyResult");
             return visible("#currencyModal")
               && document.querySelectorAll("#currencyFrom option").length >= 12
-              && document.querySelector("#currencyResult").textContent.trim() !== "—";
+              && Boolean(result && result.textContent.trim() !== "—");
           }
-          return visible("#qrModal")
-            && visible("#qrScanner")
-            && typeof window.jsQR === "function"
-            && typeof window.qrcode === "function";
+          if (readiness === "unit-converter") {
+            const result = document.querySelector("#unitToValue");
+            return visible("#unitConverterModal")
+              && document.querySelectorAll("#unitFrom option").length >= 2
+              && Boolean(result && result.value.trim() !== "");
+          }
+          if (readiness === "world-clock") {
+            return visible("#worldClockModal")
+              && document.querySelectorAll("#clockList .clock-card").length > 0
+              && document.querySelectorAll("#clockCity option").length > 0;
+          }
+          if (readiness === "timer") {
+            const startButton = document.querySelector("#timerStart");
+            const timerLabel = document.querySelector("#timerTime")?.getAttribute("aria-label") || "";
+            return visible("#timerModal")
+              && Boolean(startButton && !startButton.disabled)
+              && timerLabel.startsWith("Timer ");
+          }
+          if (readiness === "guides") {
+            return visible("#guidesModal")
+              && document.querySelectorAll("#guidesModal .guide-list article").length >= 3;
+          }
+          if (readiness === "qr") {
+            return visible("#qrModal")
+              && visible("#qrScanner")
+              && typeof window.jsQR === "function"
+              && typeof window.qrcode === "function";
+          }
+          throw new Error(`Unknown tool readiness state: ${readiness}`);
         }, tool.readiness, { polling: "raf" });
 
         const interactionMs = await page.evaluate((markerName) => {

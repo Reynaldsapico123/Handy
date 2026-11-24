@@ -13,7 +13,7 @@ The separate [production monitor](./.github/workflows/monitor-production.yml) ru
 
 The deployment workflow runs a simulated mobile Lighthouse audit against the Cloudflare preview for the homepage, Calculator, Currency, and QR scanner. The release budget follows the Core Web Vitals "good" thresholds: LCP at or below 2.5 seconds and CLS at or below 0.10. Lighthouse's overall performance score is reported for context.
 
-It also measures mobile tap-to-ready time for Calculator, Currency, and the QR scanner with a throttled 3G connection and 4× CPU slowdown. Each tool must become usable within 2 seconds; live currency rates are mocked so the budget measures local tool readiness rather than an external API.
+It also measures mobile tap-to-ready time for all seven lazy-loaded tools with a throttled 3G connection and 4× CPU slowdown. Each tool must become usable within 2 seconds; live currency rates are mocked so the budget measures local tool readiness rather than an external API.
 
 Versioned JavaScript and CSS assets are cached for one year; HTML and `/sw.js` remain revalidated. The production health check verifies both policies.
 
