@@ -1,5 +1,6 @@
 const assert = require("assert");
 const { firefox, webkit } = require("playwright");
+const { runServiceWorkerUpdateTest } = require("./service-worker-update");
 
 const deploymentUrl = process.env.HANDY_DEPLOYMENT_URL ||
   "https://handy-6on.pages.dev";
@@ -118,6 +119,7 @@ async function verifyBrowser(name, browserType) {
 
 async function run() {
   for (const [name, browserType] of [["Firefox", firefox], ["WebKit", webkit]]) {
+    await runServiceWorkerUpdateTest(browserType, name);
     await verifyBrowser(name, browserType);
   }
   console.log(`Cross-browser smoke test passed: ${deploymentUrl}`);

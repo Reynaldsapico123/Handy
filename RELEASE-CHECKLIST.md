@@ -28,11 +28,11 @@ Before deploying:
 - Test `/` and `Ctrl/Cmd+K`; confirm Enter opens the selected action.
 - Test Calculator, Unit Converter, Timer, World Clock, Currency, and QR tools.
 - Test QR image scanning and camera permission success/error states; confirm the deployed smoke check allows same-origin camera access.
-- Run the Firefox/WebKit smoke check for core tools, QR decoding, and scanner startup/fallback; Chromium covers camera permission and offline behavior.
+- Run the Firefox/WebKit smoke check for core tools, QR decoding, scanner startup/fallback, and service-worker update/offline recovery; Chromium covers camera permission and offline behavior.
 - Test currency online refresh, cached fallback, offline state, and timeout.
 - Test backup download and restore; confirm calculator history and QR text remain unchanged.
 - Test tool hiding/reordering/reset, theme, favorites, and recent tools.
-- Test PWA install guidance, update notice, offline navigation, and the diagnostics panel; automated smoke verifies successful and failed worker updates, cache cleanup, recovery, and offline tool use.
+- Test PWA install guidance, update notice, offline navigation, and the diagnostics panel; automated Chromium, Firefox, and WebKit checks verify successful and failed worker updates, cache cleanup, recovery, and offline tool use.
 - Confirm privacy/clear-data action preserves unrelated browser storage.
 - Deploy `dist/` to Cloudflare Pages.
 - On the deployed URL, repeat the smoke checks once and verify asset URLs use local versioned files.

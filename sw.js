@@ -1,4 +1,4 @@
-const CACHE_NAME = "handy-v17";
+const CACHE_NAME = "handy-v18";
 const APP_SHELL = [
   "/",
   "/calculator",
@@ -26,6 +26,10 @@ const TOOL_ASSETS = [
   "/node_modules/jsqr/dist/jsQR.js"
 ];
 
+function getBuildId(html) {
+  return html.match(/<meta name="handy-build" content="([^"]+)"/)?.[1] || null;
+}
+
 self.addEventListener("install", (event) => {
   event.waitUntil((async () => {
     const response = await fetch("/");
@@ -35,7 +39,7 @@ self.addEventListener("install", (event) => {
       .map(([, asset]) => new URL(asset, self.location.origin))
       .filter((url) => url.origin === self.location.origin)
       .map((url) => `${url.pathname}${url.search}`);
-    const buildId = html.match(/<meta name="handy-build" content="([^"]+)"/)?.[1];
+    const buildId = getBuildId(html);
     if (!buildId) throw new Error("Could not determine the app build for offline caching.");
     const toolAssets = TOOL_ASSETS.map((asset) => `${asset}?v=${encodeURIComponent(buildId)}`);
     const cache = await caches.open(CACHE_NAME);
@@ -69,7 +73,21 @@ self.addEventListener("fetch", (event) => {
         const response = await fetch(event.request);
         if (response.ok && !response.redirected) {
           const cache = await caches.open(CACHE_NAME);
-          await cache.put(event.request, response.clone());
+          if ((response.headers.get("content-type") || "").includes("text/html")) {
+            const cachedShell = await cache.match("/");
+            const cachedBuildId = cachedShell ? getBuildId(await cachedShell.text()) : null;
+            const responseBuildId = getBuildId(await response.clone().text());
+            if (cachedBuildId && cachedBuildId === responseBuildId) {
+              await cache.put(event.request, response.clone());
+            } else if (event.request.mode === "navigate") {
+              const cachedPage = await cache.match(event.request);
+              if (cachedPage) return cachedPage;
+              const appShell = await cache.match("/");
+              if (appShell) return appShell;
+            }
+          } else {
+            await cache.put(event.request, response.clone());
+          }
         }
         return response;
       } catch (error) {
