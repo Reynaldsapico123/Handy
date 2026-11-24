@@ -64,6 +64,29 @@ async function run() {
     await page.waitForSelector("#timerModal:not([hidden])");
     await page.keyboard.press("Escape");
 
+    for (const [buttonName, modalSelector] of [
+      ["Open Calculator", "#calculatorModal"],
+      ["Open Unit Converter", "#unitConverterModal"],
+      ["Open World Clock", "#worldClockModal"],
+      ["Open Currency Exchange", "#currencyModal"]
+    ]) {
+      await page.getByRole("button", { name: buttonName }).click();
+      await page.waitForSelector(`${modalSelector}:not([hidden])`);
+      if (modalSelector === "#currencyModal") {
+        await page.waitForFunction(() => {
+          const status = document.querySelector("#currencyStatus")?.textContent || "";
+          return status && !status.startsWith("Loading") && !status.startsWith("Refreshing");
+        }, null, { timeout: 12000 });
+      }
+      await page.keyboard.press("Escape");
+      await page.locator(modalSelector).waitFor({ state: "hidden" });
+    }
+
+    await page.click(".learn-link");
+    await page.waitForSelector("#guidesModal:not([hidden])");
+    await page.keyboard.press("Escape");
+    await page.locator("#guidesModal").waitFor({ state: "hidden" });
+
     await page.getByRole("button", { name: "Scan QR code" }).click();
     await page.waitForSelector("#qrModal:not([hidden])");
     await page.waitForSelector("#qrScanTab");
