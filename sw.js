@@ -1,4 +1,4 @@
-const CACHE_NAME = "handy-v16";
+const CACHE_NAME = "handy-v17";
 const APP_SHELL = [
   "/",
   "/calculator",
@@ -39,7 +39,12 @@ self.addEventListener("install", (event) => {
     if (!buildId) throw new Error("Could not determine the app build for offline caching.");
     const toolAssets = TOOL_ASSETS.map((asset) => `${asset}?v=${encodeURIComponent(buildId)}`);
     const cache = await caches.open(CACHE_NAME);
-    await cache.addAll([...new Set([...APP_SHELL, ...assets, ...toolAssets])]);
+    try {
+      await cache.addAll([...new Set([...APP_SHELL, ...assets, ...toolAssets])]);
+    } catch (error) {
+      await caches.delete(CACHE_NAME);
+      throw error;
+    }
   })());
 });
 

@@ -32,7 +32,7 @@ Before deploying:
 - Test currency online refresh, cached fallback, offline state, and timeout.
 - Test backup download and restore; confirm calculator history and QR text remain unchanged.
 - Test tool hiding/reordering/reset, theme, favorites, and recent tools.
-- Test PWA install guidance, update notice, offline navigation, and the diagnostics panel; automated smoke verifies an installed app updates its worker/cache and opens a tool offline.
+- Test PWA install guidance, update notice, offline navigation, and the diagnostics panel; automated smoke verifies successful and failed worker updates, cache cleanup, recovery, and offline tool use.
 - Confirm privacy/clear-data action preserves unrelated browser storage.
 - Deploy `dist/` to Cloudflare Pages.
 - On the deployed URL, repeat the smoke checks once and verify asset URLs use local versioned files.

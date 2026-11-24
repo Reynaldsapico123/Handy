@@ -16,7 +16,8 @@ const mimeTypes = {
 };
 
 const server = http.createServer((request, response) => {
-  const requestPath = new URL(request.url, "http://127.0.0.1").pathname;
+  const requestUrl = new URL(request.url, "http://127.0.0.1");
+  const requestPath = requestUrl.pathname;
   const pagePath = requestPath === "/" ? "/index.html" : requestPath;
   const requestedPath = path.extname(pagePath) ? pagePath : `${pagePath}.html`;
   const filePath = path.resolve(root, `.${requestedPath}`);
@@ -29,6 +30,11 @@ const server = http.createServer((request, response) => {
     if (error) {
       response.writeHead(404);
       response.end("Not found");
+      return;
+    }
+    if (releaseFixture?.failAsset === `${requestPath}${requestUrl.search}`) {
+      response.writeHead(503);
+      response.end("Simulated unavailable release asset.");
       return;
     }
     let responseBody = data;
@@ -744,10 +750,10 @@ async function run() {
       await updatePage.waitForFunction(() => navigator.serviceWorker.controller !== null);
       await updatePage.reload({ waitUntil: "networkidle" });
       await updatePage.waitForFunction(async () =>
-        (await caches.keys()).includes("handy-v16")
+        (await caches.keys()).includes("handy-v17")
       );
 
-      releaseFixture = { buildId: "release-v2", cacheName: "handy-v17" };
+      releaseFixture = { buildId: "release-v2", cacheName: "handy-v18" };
       await updatePage.evaluate(async () => {
         const registration = await navigator.serviceWorker.getRegistration();
         if (!registration) throw new Error("The app service worker was not registered.");
@@ -760,10 +766,10 @@ async function run() {
       );
       await updatePage.waitForFunction(async () => {
         const cacheNames = await caches.keys();
-        return cacheNames.includes("handy-v17") && !cacheNames.includes("handy-v16");
+        return cacheNames.includes("handy-v18") && !cacheNames.includes("handy-v17");
       });
       const updatedCacheAssets = await updatePage.evaluate(async () => {
-        const cache = await caches.open("handy-v17");
+        const cache = await caches.open("handy-v18");
         return (await cache.keys()).map((request) => new URL(request.url).pathname + new URL(request.url).search);
       });
       assert(
@@ -776,6 +782,76 @@ async function run() {
       assert.strictEqual(
         await updatePage.locator('meta[name="handy-build"]').getAttribute("content"),
         "release-v2"
+      );
+      await updatePage.locator("#toolGrid").getByRole("button", { name: "Open Calculator" }).click();
+      await updatePage.waitForSelector("#calculatorModal:not([hidden])");
+      await updatePage.keyboard.press("Escape");
+
+      await updateContext.setOffline(false);
+      releaseFixture = {
+        buildId: "release-v3",
+        cacheName: "handy-v19",
+        failAsset: "/calculator.js?v=release-v3"
+      };
+      const failedWorkerState = await updatePage.evaluate(async () => {
+        const registration = await navigator.serviceWorker.getRegistration();
+        if (!registration) throw new Error("The app service worker was not registered.");
+        const installResult = new Promise((resolve) => {
+          registration.addEventListener("updatefound", () => {
+            const worker = registration.installing;
+            if (!worker) throw new Error("The updated service worker was not found.");
+            const checkState = () => {
+              if (worker.state === "redundant") resolve(worker.state);
+            };
+            worker.addEventListener("statechange", checkState);
+            checkState();
+          }, { once: true });
+        });
+        await registration.update();
+        return installResult;
+      });
+      assert.strictEqual(failedWorkerState, "redundant");
+      const failedUpdateState = await updatePage.evaluate(async () => ({
+        buildId: document.querySelector('meta[name="handy-build"]')?.content,
+        controlled: navigator.serviceWorker.controller !== null,
+        cacheNames: await caches.keys()
+      }));
+      assert.strictEqual(failedUpdateState.buildId, "release-v2");
+      assert.strictEqual(failedUpdateState.controlled, true);
+      assert(failedUpdateState.cacheNames.includes("handy-v18"));
+      assert(!failedUpdateState.cacheNames.includes("handy-v19"), "A failed install must remove its partial cache.");
+
+      await updateContext.setOffline(true);
+      await updatePage.reload({ waitUntil: "domcontentloaded" });
+      assert.strictEqual(
+        await updatePage.locator('meta[name="handy-build"]').getAttribute("content"),
+        "release-v2"
+      );
+      await updatePage.locator("#toolGrid").getByRole("button", { name: "Open Calculator" }).click();
+      await updatePage.waitForSelector("#calculatorModal:not([hidden])");
+      await updatePage.keyboard.press("Escape");
+
+      await updateContext.setOffline(false);
+      releaseFixture.failAsset = null;
+      await updatePage.evaluate(async () => {
+        const registration = await navigator.serviceWorker.getRegistration();
+        if (!registration) throw new Error("The app service worker was not registered.");
+        await registration.update();
+      });
+      await updatePage.waitForSelector("#updateNotice:not([hidden])");
+      await updatePage.click("#updateNow");
+      await updatePage.waitForFunction(() =>
+        document.querySelector('meta[name="handy-build"]')?.content === "release-v3"
+      );
+      await updatePage.waitForFunction(async () => {
+        const cacheNames = await caches.keys();
+        return cacheNames.includes("handy-v19") && !cacheNames.includes("handy-v18");
+      });
+      await updateContext.setOffline(true);
+      await updatePage.reload({ waitUntil: "domcontentloaded" });
+      assert.strictEqual(
+        await updatePage.locator('meta[name="handy-build"]').getAttribute("content"),
+        "release-v3"
       );
       await updatePage.locator("#toolGrid").getByRole("button", { name: "Open Calculator" }).click();
       await updatePage.waitForSelector("#calculatorModal:not([hidden])");
