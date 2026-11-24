@@ -28,6 +28,34 @@ async function fetchText(url) {
   return response.text();
 }
 
+async function fetchPrimaryHtml(expectedBuildId) {
+  const maxAttempts = 6;
+  const retryDelayMs = 5000;
+  let liveBuildId = "unknown";
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    const html = await fetchText(`${primaryUrl}/`);
+    liveBuildId = html.match(/<meta name="handy-build" content="([a-f0-9]{12})"/i)?.[1];
+    if (!liveBuildId) {
+      throw new Error("Primary deployment did not return a Handy build fingerprint.");
+    }
+    if (!expectedBuildId || liveBuildId === expectedBuildId) return html;
+    if (attempt < maxAttempts) {
+      console.warn(
+        `Primary deployment is still updating (live=${liveBuildId}, ` +
+        `recorded=${expectedBuildId}); retrying in ${retryDelayMs / 1000}s ` +
+        `(${attempt}/${maxAttempts}).`
+      );
+      await new Promise((resolve) => setTimeout(resolve, retryDelayMs));
+    }
+  }
+
+  throw new Error(
+    `Live build mismatch after ${maxAttempts} checks: ` +
+    `live=${liveBuildId}, recorded=${expectedBuildId}`
+  );
+}
+
 async function main() {
   let deployment = {};
   try {
@@ -39,12 +67,8 @@ async function main() {
   const checks = [];
   let verificationStatus = "passed";
   try {
-    const primaryHtml = await fetchText(`${primaryUrl}/`);
+    const primaryHtml = await fetchPrimaryHtml(deployment.buildId);
     const primaryBuild = primaryHtml.match(/<meta name="handy-build" content="([a-f0-9]{12})"/i)?.[1];
-    if (!primaryBuild) throw new Error("Primary deployment did not return a Handy build fingerprint.");
-    if (deployment.buildId && primaryBuild !== deployment.buildId) {
-      throw new Error(`Live build mismatch: live=${primaryBuild}, recorded=${deployment.buildId}`);
-    }
     checks.push({ name: "primary-build-fingerprint", status: "passed", value: primaryBuild });
 
     await fetchText(`${primaryUrl}/sw.js`);
