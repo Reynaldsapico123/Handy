@@ -1,0 +1,71 @@
+<div class="tool-modal qr-modal" id="qrModal" role="dialog" aria-modal="true" aria-labelledby="qrTitle" hidden>
+  <div class="modal-backdrop" data-close-qr></div>
+  <section class="qr-panel">
+    <div class="qr-header">
+      <div>
+        <p class="section-kicker">EVERYDAY TOOL</p>
+        <h2 id="qrTitle">QR Code Maker</h2>
+      </div>
+      <button class="modal-close" type="button" data-close-qr aria-label="Close QR code maker">×</button>
+    </div>
+
+    <div class="qr-tabs" role="tablist" aria-label="QR code mode">
+      <button type="button" class="qr-tab active" id="qrGenerateTab" role="tab" aria-selected="true">Create</button>
+      <button type="button" class="qr-tab" id="qrScanTab" role="tab" aria-selected="false">Scan</button>
+    </div>
+
+    <div class="qr-content" id="qrCreator">
+      <div class="qr-controls">
+        <label class="qr-label" for="qrText">Text or URL</label>
+        <textarea id="qrText" maxlength="500" placeholder="Enter a link or message…" rows="4">https://example.com</textarea>
+
+        <div class="qr-colors">
+          <label for="qrForeground">QR color
+            <input id="qrForeground" type="color" value="#17191f">
+          </label>
+          <label for="qrBackground">Background
+            <input id="qrBackground" type="color" value="#ffffff">
+          </label>
+        </div>
+
+        <div class="qr-actions">
+          <button type="button" id="qrGenerate" class="qr-primary">Generate</button>
+          <button type="button" id="qrCopy" class="qr-secondary">Copy</button>
+          <button type="button" id="qrDownload" class="qr-secondary">Download</button>
+        </div>
+      </div>
+
+      <div class="qr-preview" id="qrPreview" role="img" aria-label="Generated QR code preview">
+        <canvas id="qrCanvas" width="220" height="220"></canvas>
+        <span id="qrEmpty">Enter text to create a code</span>
+      </div>
+    </div>
+
+    <section class="qr-scanner" id="qrScanner" aria-label="Scan a QR code" hidden>
+      <p class="qr-scan-help">Scan a QR code from an image or use your device camera. Scanning happens on this device.</p>
+      <div class="qr-scan-actions">
+        <label class="qr-upload-button" for="qrImageInput">Choose image</label>
+        <input id="qrImageInput" type="file" accept="image/*">
+        <button type="button" id="qrCameraStart" class="qr-secondary">Use camera</button>
+        <button type="button" id="qrCameraSwitch" class="qr-secondary" hidden>Switch camera</button>
+        <button type="button" id="qrFlashlightToggle" class="qr-secondary" aria-pressed="false" hidden>Turn flashlight on</button>
+        <button type="button" id="qrCameraStop" class="qr-secondary" hidden>Stop camera</button>
+      </div>
+      <div id="qrCameraFrame" class="qr-camera-frame" hidden>
+        <video id="qrCameraVideo" class="qr-camera-video" playsinline muted hidden></video>
+        <div class="qr-camera-overlay" aria-hidden="true">
+          <div class="qr-camera-guide"></div>
+          <span class="qr-camera-hint">Align the QR code inside the frame</span>
+        </div>
+      </div>
+      <canvas id="qrScanCanvas" hidden></canvas>
+      <div id="qrScanStatus" class="qr-scan-status" role="status" aria-live="polite">Choose a QR image or start the camera.</div>
+      <button type="button" id="qrScanRetry" class="qr-secondary qr-scan-retry" hidden>Try again</button>
+      <div class="qr-scan-result" id="qrScanResult" hidden>
+        <p>Scanned content</p>
+        <output id="qrScanText"></output>
+        <button type="button" id="qrScanCopy" class="qr-secondary">Copy result</button>
+      </div>
+    </section>
+  </section>
+</div>

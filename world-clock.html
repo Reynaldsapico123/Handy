@@ -1,0 +1,33 @@
+<div class="tool-modal world-clock-modal" id="worldClockModal" role="dialog" aria-modal="true" aria-labelledby="worldClockTitle" hidden>
+  <div class="modal-backdrop" data-close-world-clock></div>
+  <section class="world-clock-panel">
+    <div class="world-clock-header">
+      <div>
+        <p class="section-kicker">EVERYDAY TOOL</p>
+        <h2 id="worldClockTitle">World Clock</h2>
+      </div>
+      <button class="modal-close" type="button" data-close-world-clock aria-label="Close world clock">×</button>
+    </div>
+
+    <div class="clock-add-row">
+      <label class="sr-only" for="clockCity">Add a city</label>
+      <select id="clockCity" class="unit-select">
+        <option value="Asia/Singapore">Singapore</option>
+        <option value="Asia/Tokyo">Tokyo</option>
+        <option value="Asia/Dubai">Dubai</option>
+        <option value="Asia/Kolkata">New Delhi</option>
+        <option value="Europe/London">London</option>
+        <option value="Europe/Paris">Paris</option>
+        <option value="America/New_York">New York</option>
+        <option value="America/Los_Angeles">Los Angeles</option>
+        <option value="Australia/Sydney">Sydney</option>
+        <option value="Pacific/Auckland">Auckland</option>
+        <option value="Africa/Johannesburg">Johannesburg</option>
+        <option value="America/Sao_Paulo">São Paulo</option>
+      </select>
+      <button type="button" id="addClockCity" class="clock-add-button">Add city</button>
+    </div>
+
+    <div class="clock-list" id="clockList"></div>
+  </section>
+</div>

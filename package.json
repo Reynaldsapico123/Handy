@@ -1,0 +1,30 @@
+{
+  "name": "website2",
+  "version": "1.0.0",
+  "main": "script.js",
+  "scripts": {
+    "test": "node tests/run-tests.js",
+    "start": "python -m http.server 4173",
+    "build": "node build.js",
+    "smoke": "npm test && npm run build",
+    "smoke:cloudflare": "node tests/deployed-smoke.js",
+    "monitor:deployment": "node tests/deployment-monitor.js",
+    "preview": "python -m http.server 4175 --bind 127.0.0.1 --directory dist",
+    "deploy:cloudflare": "node tests/deploy-and-record.js",
+    "deploy": "npm run deploy:cloudflare",
+    "verify:deployment": "node tests/deployed-smoke.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "devDependencies": {
+    "playwright": "^1.65.1",
+    "qrcode-generator": "^2.0.4",
+    "wrangler": "^4.166.0"
+  },
+  "dependencies": {
+    "jsqr": "^1.4.0",
+    "qrcode": "^1.5.4"
+  }
+}

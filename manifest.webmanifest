@@ -1,0 +1,57 @@
+{
+  "name": "Handy — Everyday Tools",
+  "short_name": "Handy",
+  "description": "Simple everyday tools for work, travel, learning, and life.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f7f8fc",
+  "theme_color": "#7559e8",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/handy-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/handy-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Scan QR code",
+      "short_name": "Scan QR",
+      "description": "Open the QR code scanner",
+      "url": "/?tool=qr&mode=scan",
+      "icons": [
+        {
+          "src": "/icons/handy-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Timer & Stopwatch",
+      "short_name": "Timer",
+      "description": "Open the timer and stopwatch",
+      "url": "/?tool=timer",
+      "icons": [
+        {
+          "src": "/icons/handy-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    }
+  ]
+}

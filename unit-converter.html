@@ -1,0 +1,33 @@
+<div class="tool-modal unit-modal" id="unitConverterModal" role="dialog" aria-modal="true" aria-labelledby="unitTitle" hidden>
+  <div class="modal-backdrop" data-close-unit></div>
+  <section class="unit-panel">
+    <div class="unit-header">
+      <div>
+        <p class="section-kicker">EVERYDAY TOOL</p>
+        <h2 id="unitTitle">Unit Converter</h2>
+      </div>
+      <button class="modal-close" type="button" data-close-unit aria-label="Close unit converter">×</button>
+    </div>
+    <label class="unit-label" for="unitCategory">Category</label>
+    <select id="unitCategory" class="unit-select">
+      <option value="length">Length</option>
+      <option value="weight">Weight</option>
+      <option value="temperature">Temperature</option>
+      <option value="area">Area</option>
+    </select>
+
+    <div class="unit-fields">
+      <div>
+        <label class="unit-label" for="unitFromValue">From</label>
+        <input id="unitFromValue" class="unit-input" type="number" value="1" step="any">
+        <select id="unitFrom" class="unit-select" aria-label="Convert from"></select>
+      </div>
+      <button type="button" class="unit-swap" id="unitSwap" aria-label="Swap units">⇅</button>
+      <div>
+        <label class="unit-label" for="unitToValue">To</label>
+        <input id="unitToValue" class="unit-input" type="text" readonly>
+        <select id="unitTo" class="unit-select" aria-label="Convert to"></select>
+      </div>
+    </div>
+  </section>
+</div>

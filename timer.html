@@ -1,0 +1,32 @@
+<div class="tool-modal timer-modal" id="timerModal" role="dialog" aria-modal="true" aria-labelledby="timerTitle" hidden>
+  <div class="modal-backdrop" data-close-timer></div>
+  <section class="timer-panel">
+    <div class="unit-header">
+      <div>
+        <p class="section-kicker">EVERYDAY TOOL</p>
+        <h2 id="timerTitle">Timer & Stopwatch</h2>
+      </div>
+      <button class="modal-close" type="button" data-close-timer aria-label="Close timer">×</button>
+    </div>
+
+    <div class="timer-tabs" role="tablist" aria-label="Timer mode">
+      <button type="button" class="timer-tab active" data-mode="timer" role="tab" aria-selected="true" tabindex="0">Timer</button>
+      <button type="button" class="timer-tab" data-mode="stopwatch" role="tab" aria-selected="false" tabindex="-1">Stopwatch</button>
+    </div>
+
+    <div class="timer-time" id="timerTime" role="timer" aria-live="off" aria-label="Timer 00:00">00:00</div>
+    <p class="sr-only" id="timerStatus" role="status" aria-live="polite" aria-atomic="true"></p>
+
+    <div class="timer-duration" id="timerDuration">
+      <label for="timerMinutes">Minutes</label>
+      <input id="timerMinutes" type="number" min="0" max="999" value="5">
+      <label for="timerSeconds">Seconds</label>
+      <input id="timerSeconds" type="number" min="0" max="59" value="0">
+    </div>
+
+    <div class="timer-actions">
+      <button type="button" class="timer-primary" id="timerStart" aria-label="Start timer">Start</button>
+      <button type="button" class="timer-secondary" id="timerReset">Reset</button>
+    </div>
+  </section>
+</div>

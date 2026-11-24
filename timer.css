@@ -1,0 +1,60 @@
+.timer-modal .timer-panel {
+  position: relative;
+  width: min(430px, 100%);
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
+  padding: 24px;
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  background: var(--surface);
+  box-shadow: 0 24px 70px rgba(35, 36, 50, 0.24);
+  animation: modal-in 180ms ease-out;
+}
+.timer-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  padding: 4px;
+  border-radius: 12px;
+  background: var(--bg);
+}
+.timer-tab {
+  height: 42px;
+  border: 0;
+  border-radius: 9px;
+  color: var(--muted);
+  background: transparent;
+  font-weight: 700;
+  cursor: pointer;
+}
+.timer-tab.active { color: var(--accent); background: var(--surface); box-shadow: 0 3px 12px rgba(38, 42, 65, 0.08); }
+.timer-time {
+  margin: 24px 0 18px;
+  font-family: "Manrope", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 52px;
+  font-weight: 800;
+  letter-spacing: -2px;
+  text-align: center;
+}
+.timer-duration {
+  display: grid;
+  grid-template-columns: auto 86px auto 86px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+.timer-duration input {
+  height: 44px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  color: var(--text);
+  background: var(--surface);
+  text-align: center;
+}
+.timer-duration.hidden { display: none; }
+.timer-actions { margin-top: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.timer-actions button { height: 48px; border-radius: 11px; font-weight: 800; cursor: pointer; }
+.timer-primary { border: 0; color: white; background: var(--accent); }
+.timer-secondary { border: 1px solid var(--line); color: var(--text); background: var(--surface); }
