@@ -9,6 +9,8 @@ Add these repository secrets under GitHub **Settings â†’ Secrets and variables â
 
 Pushes to `main` automatically test, build, deploy to Cloudflare Pages, verify the primary alias, and upload deployment evidence.
 
+The separate [production monitor](./.github/workflows/monitor-production.yml) runs daily at 08:17 UTC and after successful deployments; it can also be started manually. It checks the live app without Cloudflare credentials; run `npm run health:production` to check it locally.
+
 ## Latest release
 
 Run `npm run deploy:cloudflare` to build, deploy, and record the Cloudflare URL.
