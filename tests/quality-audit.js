@@ -94,26 +94,65 @@ async function run() {
     );
 
     await page.addScriptTag({ path: require.resolve("axe-core/axe.min.js") });
-    for (const theme of ["light", "dark"]) {
-      if (theme === "dark") {
-        await page.click("#themeToggle");
-        await page.waitForTimeout(200);
-      }
-      const violations = await getAccessibilityViolations(page);
-      const blockingViolations = violations.filter((violation) =>
-        ["critical", "serious"].includes(violation.impact)
-      );
-      const advisoryViolations = violations.filter((violation) =>
-        !["critical", "serious"].includes(violation.impact)
-      );
+    for (const viewport of [
+      { name: "desktop", width: 1280, height: 900 },
+      { name: "mobile", width: 390, height: 844 }
+    ]) {
+      await page.setViewportSize({ width: viewport.width, height: viewport.height });
+      for (const theme of ["light", "dark"]) {
+        const currentlyDark = await page.evaluate(() => document.body.classList.contains("dark"));
+        if (currentlyDark !== (theme === "dark")) {
+          await page.click("#themeToggle");
+          await page.waitForTimeout(200);
+        }
+        const violations = await getAccessibilityViolations(page);
+        const blockingViolations = violations.filter((violation) =>
+          ["critical", "serious"].includes(violation.impact)
+        );
+        const advisoryViolations = violations.filter((violation) =>
+          !["critical", "serious"].includes(violation.impact)
+        );
 
-      if (advisoryViolations.length) {
-        console.warn(`${theme} theme accessibility advisories:\n${JSON.stringify(advisoryViolations, null, 2)}`);
+        if (advisoryViolations.length) {
+          console.warn(`${viewport.name} ${theme} accessibility advisories:\n${JSON.stringify(advisoryViolations, null, 2)}`);
+        }
+        if (blockingViolations.length) {
+          throw new Error(`Found ${blockingViolations.length} serious or critical accessibility violation(s) in the ${viewport.name} ${theme} view:\n${JSON.stringify(blockingViolations, null, 2)}`);
+        }
+        console.log(`Accessibility passed (${viewport.name}, ${theme}): no serious or critical violations.`);
       }
-      if (blockingViolations.length) {
-        throw new Error(`Found ${blockingViolations.length} serious or critical accessibility violation(s) in the ${theme} theme:\n${JSON.stringify(blockingViolations, null, 2)}`);
+
+      if (viewport.name === "mobile") {
+        const mobileMetrics = await page.evaluate(() => {
+          const targets = [...document.querySelectorAll(
+            "#menuToggle, #themeToggle, #installApp, #qrScanShortcut, .mobile-bottom-nav a"
+          )]
+            .filter((element) => element.getClientRects().length > 0)
+            .map((element) => {
+              const rect = element.getBoundingClientRect();
+              return {
+                name: element.getAttribute("aria-label") || element.textContent.trim() || element.id,
+                width: Math.round(rect.width),
+                height: Math.round(rect.height)
+              };
+            });
+          return {
+            scrollWidth: document.documentElement.scrollWidth,
+            clientWidth: document.documentElement.clientWidth,
+            targets
+          };
+        });
+        if (mobileMetrics.scrollWidth > mobileMetrics.clientWidth) {
+          throw new Error(`Mobile layout overflows horizontally: ${mobileMetrics.scrollWidth}px wide in a ${mobileMetrics.clientWidth}px viewport.`);
+        }
+        const undersizedTargets = mobileMetrics.targets.filter((target) =>
+          target.width < 44 || target.height < 44
+        );
+        if (undersizedTargets.length) {
+          throw new Error(`Mobile touch targets must be at least 44x44px:\n${JSON.stringify(undersizedTargets, null, 2)}`);
+        }
+        console.log(`Mobile layout passed: no horizontal overflow; ${mobileMetrics.targets.length} key touch targets are at least 44x44px.`);
       }
-      console.log(`Accessibility passed (${theme} theme): no serious or critical violations.`);
     }
   } finally {
     if (browser) await browser.close();
