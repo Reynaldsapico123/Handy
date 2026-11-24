@@ -8,8 +8,35 @@
 /sw.js
   Cache-Control: no-cache
 
-/styles.css
-  Cache-Control: public, max-age=3600
+/*.css
+  Cache-Control: public, max-age=31536000, immutable
 
-/*.js
-  Cache-Control: public, max-age=3600
+/script.js
+  Cache-Control: public, max-age=31536000, immutable
+
+/modal-accessibility.js
+  Cache-Control: public, max-age=31536000, immutable
+
+/calculator.js
+  Cache-Control: public, max-age=31536000, immutable
+
+/unit-converter.js
+  Cache-Control: public, max-age=31536000, immutable
+
+/timer.js
+  Cache-Control: public, max-age=31536000, immutable
+
+/guides.js
+  Cache-Control: public, max-age=31536000, immutable
+
+/world-clock.js
+  Cache-Control: public, max-age=31536000, immutable
+
+/currency.js
+  Cache-Control: public, max-age=31536000, immutable
+
+/qr-code.js
+  Cache-Control: public, max-age=31536000, immutable
+
+/vendor/*.js
+  Cache-Control: public, max-age=31536000, immutable

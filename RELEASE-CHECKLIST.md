@@ -11,6 +11,8 @@ Pushes to `main` automatically test, build, deploy to Cloudflare Pages, verify t
 
 The separate [production monitor](./.github/workflows/monitor-production.yml) runs daily at 08:17 UTC and after successful deployments; it can also be started manually. It checks the live app without Cloudflare credentials; run `npm run health:production` to check it locally.
 
+Versioned JavaScript and CSS assets are cached for one year; HTML and `/sw.js` remain revalidated. The production health check verifies both policies.
+
 ## Latest release
 
 Run `npm run deploy:cloudflare` to build, deploy, and record the Cloudflare URL.

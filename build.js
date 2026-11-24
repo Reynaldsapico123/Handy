@@ -54,12 +54,15 @@ fs.copyFileSync(
 
 const indexPath = path.join(dist, "index.html");
 const html = fs.readFileSync(indexPath, "utf8");
-const buildFiles = fs.readdirSync(dist)
-  .filter((file) => /\.(?:js|css)$/.test(file))
-  .sort();
+const buildFiles = [
+  ...fs.readdirSync(dist).filter((file) => /\.(?:js|css)$/.test(file)),
+  ...fs.readdirSync(vendorDirectory)
+    .filter((file) => /\.(?:js|css)$/.test(file))
+    .map((file) => path.join("vendor", file))
+].sort();
 const buildFingerprint = crypto.createHash("sha256");
 buildFiles.forEach((file) => {
-  buildFingerprint.update(file);
+  buildFingerprint.update(file.replaceAll(path.sep, "/"));
   buildFingerprint.update(fs.readFileSync(path.join(dist, file)));
 });
 const buildId = buildFingerprint.digest("hex").slice(0, 12);
