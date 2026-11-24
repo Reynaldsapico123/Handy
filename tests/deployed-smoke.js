@@ -28,11 +28,11 @@ async function run() {
   });
   const page = await context.newPage();
   const consoleErrors = [];
-  const cspReports = [];
+  const cspViolations = [];
   page.on("console", (message) => {
     const text = message.text();
     if (/content security policy/i.test(text)) {
-      cspReports.push(text);
+      cspViolations.push(text);
     } else if (message.type() === "error") {
       consoleErrors.push(text);
     }
@@ -41,10 +41,10 @@ async function run() {
   try {
     const response = await page.goto(deploymentUrl, { waitUntil: "networkidle" });
     assert(response, "The deployment did not return an HTTP response.");
-    const reportOnlyPolicy = response.headers()["content-security-policy-report-only"];
-    assert(reportOnlyPolicy, "The deployment is missing the report-only Content Security Policy header.");
-    assert.match(reportOnlyPolicy, /default-src 'self'/);
-    assert.match(reportOnlyPolicy, /connect-src 'self' https:\/\/open\.er-api\.com/);
+    const policy = response.headers()["content-security-policy"];
+    assert(policy, "The deployment is missing the Content Security Policy header.");
+    assert.match(policy, /default-src 'self'/);
+    assert.match(policy, /connect-src 'self' https:\/\/open\.er-api\.com/);
     assert.strictEqual(await page.title(), "Handy — Everyday tools for everyone");
     assert.strictEqual(await page.locator(".tool-card").count(), 6);
     const liveBuildId = await page.evaluate(() =>
@@ -160,8 +160,8 @@ async function run() {
     if (consoleErrors.length) {
       throw new Error(`Console errors: ${consoleErrors.slice(0, 5).join(" | ")}`);
     }
-    if (cspReports.length) {
-      console.warn(`CSP report-only notices to review:\n${cspReports.join("\n")}`);
+    if (cspViolations.length) {
+      throw new Error(`Content Security Policy violations: ${cspViolations.join("\n")}`);
     }
     console.log(`Deployed smoke test passed: ${deploymentUrl}`);
   } finally {

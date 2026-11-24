@@ -13,7 +13,7 @@ Pushes to `main` automatically test, build, deploy to Cloudflare Pages, verify t
 
 Run `npm run deploy:cloudflare` to build, deploy, and record the Cloudflare URL.
 Run `npm run smoke:cloudflare` to verify the recorded deployment.
-Review CSP Report-Only notices in the deployed smoke-test logs before considering an enforced policy.
+Confirm the deployed smoke test reports no Content Security Policy violations.
 
 Before deploying:
 
