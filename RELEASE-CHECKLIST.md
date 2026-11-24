@@ -9,6 +9,8 @@ Add these repository secrets under GitHub **Settings â†’ Secrets and variables â
 
 Pushes to `main` automatically test, build, deploy to Cloudflare Pages, verify the primary alias, and upload deployment evidence.
 
+The quality gate runs axe-core on the homepage and all seven tool dialogs in desktop/mobile and light/dark themes, including both QR creation and scanner modes. Serious or critical findings fail the gate.
+
 The separate [production monitor](./.github/workflows/monitor-production.yml) runs daily at 08:17 UTC and after successful deployments; it can also be started manually. It checks the live app without Cloudflare credentials; run `npm run health:production` to check it locally.
 
 The deployment workflow runs a simulated mobile Lighthouse audit against the Cloudflare preview for the homepage, Calculator, Currency, and QR scanner. The release budget follows the Core Web Vitals "good" thresholds: LCP at or below 2.5 seconds and CLS at or below 0.10. Lighthouse's overall performance score is reported for context.

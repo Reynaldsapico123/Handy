@@ -41,6 +41,7 @@
   cursor: pointer;
 }
 .qr-tab.active { color: var(--accent); background: var(--surface); box-shadow: 0 2px 8px rgba(38, 42, 65, 0.08); }
+body.dark .qr-tab.active { color: #c6baff; }
 .qr-scanner[hidden] { display: none; }
 .qr-scan-help { margin: 0 0 14px; color: var(--muted); font-size: 13px; line-height: 1.5; }
 .qr-scan-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }

@@ -13,6 +13,16 @@ const mimeTypes = {
   ".svg": "image/svg+xml",
   ".webmanifest": "application/manifest+json"
 };
+const accessibilityTargets = [
+  { name: "Calculator", trigger: '#toolGrid button[aria-label="Open Calculator"]', modal: "#calculatorModal" },
+  { name: "Unit Converter", trigger: '#toolGrid button[aria-label="Open Unit Converter"]', modal: "#unitConverterModal" },
+  { name: "World Clock", trigger: '#toolGrid button[aria-label="Open World Clock"]', modal: "#worldClockModal" },
+  { name: "Currency", trigger: '#toolGrid button[aria-label="Open Currency Exchange"]', modal: "#currencyModal" },
+  { name: "Timer", trigger: '#toolGrid button[aria-label="Open Timer and Stopwatch"]', modal: "#timerModal" },
+  { name: "QR Code Maker", trigger: '#toolGrid button[aria-label="Open QR Code Maker"]', modal: "#qrModal" },
+  { name: "QR Scanner", trigger: "#qrScanShortcut", modal: "#qrModal" },
+  { name: "Helpful guides", trigger: ".learn-link", modal: "#guidesModal" }
+];
 const server = http.createServer((request, response) => {
   const pathname = new URL(request.url, "http://127.0.0.1").pathname;
   const requestedPath = pathname === "/" ? "/index.html" : decodeURIComponent(pathname);
@@ -36,9 +46,11 @@ const server = http.createServer((request, response) => {
   });
 });
 
-async function getAccessibilityViolations(page) {
-  return page.evaluate(async () => {
-    const results = await window.axe.run(document, {
+async function getAccessibilityViolations(page, scopeSelector) {
+  return page.evaluate(async (selector) => {
+    const scope = selector ? document.querySelector(selector) : document;
+    if (!scope) throw new Error(`Accessibility audit scope not found: ${selector}`);
+    const results = await window.axe.run(scope, {
       runOnly: {
         type: "tag",
         values: ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa", "best-practice"]
@@ -53,7 +65,25 @@ async function getAccessibilityViolations(page) {
         summary: node.failureSummary
       }))
     }));
-  });
+  }, scopeSelector);
+}
+
+async function assertAccessible(page, label, scopeSelector) {
+  const violations = await getAccessibilityViolations(page, scopeSelector);
+  const blockingViolations = violations.filter((violation) =>
+    ["critical", "serious"].includes(violation.impact)
+  );
+  const advisoryViolations = violations.filter((violation) =>
+    !["critical", "serious"].includes(violation.impact)
+  );
+
+  if (advisoryViolations.length) {
+    console.warn(`${label} accessibility advisories:\n${JSON.stringify(advisoryViolations, null, 2)}`);
+  }
+  if (blockingViolations.length) {
+    throw new Error(`Found ${blockingViolations.length} serious or critical accessibility violation(s) in ${label}:\n${JSON.stringify(blockingViolations, null, 2)}`);
+  }
+  console.log(`Accessibility passed (${label}): no serious or critical violations.`);
 }
 
 async function run() {
@@ -67,6 +97,19 @@ async function run() {
       localStorage.setItem("handy-welcome-dismissed", "true");
       sessionStorage.setItem("handy-update-dismissed", "true");
     });
+    await page.route("https://open.er-api.com/v6/latest/USD", (route) =>
+      route.fulfill({
+        contentType: "application/json",
+        body: JSON.stringify({
+          result: "success",
+          time_last_update_utc: "2026-11-24T00:00:00Z",
+          rates: {
+            USD: 1, EUR: 0.75, GBP: 0.8, JPY: 150, AUD: 1.5, CAD: 1.3,
+            CHF: 0.9, CNY: 7, INR: 80, SGD: 1.3, AED: 3.6, NZD: 1.6
+          }
+        })
+      })
+    );
 
     const startedAt = Date.now();
     await page.goto(`http://127.0.0.1:${server.address().port}/`, { waitUntil: "load" });
@@ -94,32 +137,21 @@ async function run() {
     );
 
     await page.addScriptTag({ path: require.resolve("axe-core/axe.min.js") });
-    for (const viewport of [
+    const viewports = [
       { name: "desktop", width: 1280, height: 900 },
       { name: "mobile", width: 390, height: 844 }
-    ]) {
+    ];
+    const themes = ["light", "dark"];
+
+    for (const viewport of viewports) {
       await page.setViewportSize({ width: viewport.width, height: viewport.height });
-      for (const theme of ["light", "dark"]) {
+      for (const theme of themes) {
         const currentlyDark = await page.evaluate(() => document.body.classList.contains("dark"));
         if (currentlyDark !== (theme === "dark")) {
           await page.click("#themeToggle");
           await page.waitForTimeout(200);
         }
-        const violations = await getAccessibilityViolations(page);
-        const blockingViolations = violations.filter((violation) =>
-          ["critical", "serious"].includes(violation.impact)
-        );
-        const advisoryViolations = violations.filter((violation) =>
-          !["critical", "serious"].includes(violation.impact)
-        );
-
-        if (advisoryViolations.length) {
-          console.warn(`${viewport.name} ${theme} accessibility advisories:\n${JSON.stringify(advisoryViolations, null, 2)}`);
-        }
-        if (blockingViolations.length) {
-          throw new Error(`Found ${blockingViolations.length} serious or critical accessibility violation(s) in the ${viewport.name} ${theme} view:\n${JSON.stringify(blockingViolations, null, 2)}`);
-        }
-        console.log(`Accessibility passed (${viewport.name}, ${theme}): no serious or critical violations.`);
+        await assertAccessible(page, `${viewport.name}, ${theme} homepage`);
       }
 
       if (viewport.name === "mobile") {
@@ -152,6 +184,30 @@ async function run() {
           throw new Error(`Mobile touch targets must be at least 44x44px:\n${JSON.stringify(undersizedTargets, null, 2)}`);
         }
         console.log(`Mobile layout passed: no horizontal overflow; ${mobileMetrics.targets.length} key touch targets are at least 44x44px.`);
+      }
+    }
+
+    for (const viewport of viewports) {
+      await page.setViewportSize({ width: viewport.width, height: viewport.height });
+      for (const theme of themes) {
+        const currentlyDark = await page.evaluate(() => document.body.classList.contains("dark"));
+        if (currentlyDark !== (theme === "dark")) {
+          await page.click("#themeToggle");
+          await page.waitForTimeout(200);
+        }
+
+        for (const target of accessibilityTargets) {
+          await page.locator(target.trigger).click();
+          const modal = page.locator(target.modal);
+          await modal.waitFor({ state: "visible" });
+          await modal.evaluate(async (dialog) => {
+            const panel = dialog.querySelector(":scope > section");
+            if (panel) await Promise.all(panel.getAnimations().map((animation) => animation.finished));
+          });
+          await assertAccessible(page, `${viewport.name}, ${theme}, ${target.name} dialog`, target.modal);
+          await page.keyboard.press("Escape");
+          await modal.waitFor({ state: "hidden" });
+        }
       }
     }
   } finally {

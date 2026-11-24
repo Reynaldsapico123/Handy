@@ -99,13 +99,14 @@
 }
 .calc-key:hover { background: var(--bg); }
 .calc-key:active { transform: scale(0.96); }
-.calc-muted { color: var(--accent); background: #f4f1fd; }
-.calc-operation { color: var(--accent); background: #eeeafa; }
+.calc-muted { color: #6548cc; background: #f4f1fd; }
+.calc-operation { color: #6548cc; background: #eeeafa; }
 .calc-equals { border-color: var(--accent); color: white; background: var(--accent); }
 .calc-equals:hover { background: #6850d4; }
-body.dark .calc-muted { background: #302e43; }
-body.dark .calc-operation { background: #302e43; }
+body.dark .calc-muted,
+body.dark .calc-operation { color: #c6baff; background: #302e43; }
 body.dark .calc-equals { background: var(--accent); }
+body.dark .history-clear { color: #c6baff; }
 .calculator-history {
   margin: 14px 0 0;
   padding: 12px 0;

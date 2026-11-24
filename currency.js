@@ -139,7 +139,7 @@ async function initializeCurrency() {
     refreshButton.disabled = true;
     refreshButton.setAttribute("aria-busy", "true");
     refreshButton.innerHTML = '<span aria-hidden="true">↻</span> Loading';
-    refreshButton.setAttribute("aria-label", "Loading exchange rates");
+    refreshButton.setAttribute("aria-label", "Refresh rates (loading exchange rates)");
     status.className = "currency-status";
     status.classList.add("loading");
     status.textContent = liveRatesAvailable ? "Refreshing live exchange rates…" : "Loading live exchange rates…";
@@ -211,7 +211,7 @@ async function initializeCurrency() {
       refreshButton.disabled = false;
       refreshButton.removeAttribute("aria-busy");
       refreshButton.innerHTML = '<span aria-hidden="true">↻</span> Refresh rates';
-      refreshButton.setAttribute("aria-label", "Refresh exchange rates");
+      refreshButton.setAttribute("aria-label", "Refresh rates");
     }
   }
 

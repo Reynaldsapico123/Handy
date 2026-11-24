@@ -26,10 +26,10 @@
   display: grid;
   place-items: center;
   border-radius: 14px;
-  color: var(--accent);
+  color: #6548cc;
   background: #eeeafa;
   font-weight: 800;
 }
 .guide-list h3 { margin: 3px 0 5px; font-size: 16px; }
 .guide-list p { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.55; }
-body.dark .guide-number { background: #302e43; }
+body.dark .guide-number { color: #c6baff; background: #302e43; }
