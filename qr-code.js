@@ -124,7 +124,7 @@ async function initializeQrCode() {
     scanStatus.textContent = message;
     scanStatus.classList.toggle("error", isError);
     scanRetry.hidden = !isError;
-    if (isError) scanRetry.setAttribute("aria-label", "Retry QR scan");
+    if (isError) scanRetry.setAttribute("aria-label", "Try again, retry QR scan");
   }
 
   scanRetry.addEventListener("click", () => {

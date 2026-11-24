@@ -120,7 +120,7 @@
   font-size: 12px;
   text-align: center;
 }
-.currency-status.error { color: #b64d55; background: #fdeeef; }
+.currency-status.error { color: #a43e47; background: #fdeeef; }
 .currency-status.loading {
   color: #6548cc;
   background: #f4f1fd;
@@ -147,7 +147,7 @@ body.dark .currency-swap,
 body.dark .currency-refresh { color: #c6baff; }
 .currency-refresh span { margin-right: 3px; font-size: 16px; }
 .currency-refresh:disabled { opacity: 0.6; cursor: wait; }
-body.dark .currency-status.error { background: #3a292e; }
+body.dark .currency-status.error { color: #ffadb1; background: #3a292e; }
 @media (max-width: 540px) {
   .currency-fields { grid-template-columns: 1fr 36px 1fr; }
   .currency-box { padding: 10px; }

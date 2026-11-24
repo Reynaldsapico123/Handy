@@ -112,7 +112,7 @@ body.dark .qr-tab.active { color: #c6baff; }
   background: var(--bg);
   font-size: 12px;
 }
-.qr-scan-status.error { color: #b64d55; background: #fdeeef; }
+.qr-scan-status.error { color: #a43e47; background: #fdeeef; }
 .qr-scan-retry {
   margin-top: 10px;
   min-height: 44px;

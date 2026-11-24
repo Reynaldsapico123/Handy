@@ -9,7 +9,7 @@ Add these repository secrets under GitHub **Settings â†’ Secrets and variables â
 
 Pushes to `main` automatically test, build, deploy to Cloudflare Pages, verify the primary alias, and upload deployment evidence.
 
-The quality gate runs axe-core on the homepage and all seven tool dialogs in desktop/mobile and light/dark themes, including both QR creation and scanner modes. Serious or critical findings fail the gate.
+The quality gate runs axe-core on the homepage and all seven tool dialogs in desktop/mobile and light/dark themes, including both QR creation and scanner modes. It also checks calculator history, currency offline/refresh-error states, QR camera-permission denial, and a decoded scan result. Serious or critical findings fail the gate.
 
 The separate [production monitor](./.github/workflows/monitor-production.yml) runs daily at 08:17 UTC and after successful deployments; it can also be started manually. It checks the live app without Cloudflare credentials; run `npm run health:production` to check it locally.
 
