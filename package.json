@@ -6,6 +6,7 @@
     "test": "node tests/run-tests.js",
     "start": "python -m http.server 4173",
     "build": "node build.js",
+    "audit:quality": "node tests/quality-audit.js",
     "smoke": "npm test && npm run build",
     "smoke:cloudflare": "node tests/deployed-smoke.js",
     "monitor:deployment": "node tests/deployment-monitor.js",
@@ -19,6 +20,7 @@
   "license": "ISC",
   "description": "",
   "devDependencies": {
+    "axe-core": "^4.14.1",
     "playwright": "^1.65.1",
     "qrcode-generator": "^2.0.4",
     "wrangler": "^4.166.0"
