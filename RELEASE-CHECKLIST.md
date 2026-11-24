@@ -1,5 +1,14 @@
 # Handy release checklist
 
+## GitHub Actions deployment
+
+Add these repository secrets under GitHub **Settings → Secrets and variables → Actions**:
+
+- `CLOUDFLARE_API_TOKEN`
+- `CLOUDFLARE_ACCOUNT_ID`
+
+Pushes to `main` automatically test, build, deploy to Cloudflare Pages, verify the primary alias, and upload deployment evidence.
+
 ## Latest release
 
 Run `npm run deploy:cloudflare` to build, deploy, and record the Cloudflare URL.
