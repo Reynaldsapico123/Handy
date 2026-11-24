@@ -49,7 +49,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v5
         with:
-          node-version: 22
+          node-version: 22.19.0
           cache: npm
 
       - name: Install dependencies
@@ -93,6 +93,11 @@ jobs:
         env:
           HANDY_DEPLOYMENT_URL: ${{ steps.cloudflare.outputs.preview_url }}
         run: npm run smoke:cloudflare
+
+      - name: Audit mobile Lighthouse performance
+        env:
+          HANDY_DEPLOYMENT_URL: ${{ steps.cloudflare.outputs.preview_url }}
+        run: npm run audit:lighthouse
 
       - name: Verify Firefox and WebKit compatibility
         env:

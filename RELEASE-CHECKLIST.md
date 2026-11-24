@@ -11,6 +11,8 @@ Pushes to `main` automatically test, build, deploy to Cloudflare Pages, verify t
 
 The separate [production monitor](./.github/workflows/monitor-production.yml) runs daily at 08:17 UTC and after successful deployments; it can also be started manually. It checks the live app without Cloudflare credentials; run `npm run health:production` to check it locally.
 
+The deployment workflow runs a simulated mobile Lighthouse audit against the Cloudflare preview. The release budget follows the Core Web Vitals "good" thresholds: LCP at or below 2.5 seconds and CLS at or below 0.10. Lighthouse's overall performance score is reported for context.
+
 Versioned JavaScript and CSS assets are cached for one year; HTML and `/sw.js` remain revalidated. The production health check verifies both policies.
 
 ## Latest release

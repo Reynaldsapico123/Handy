@@ -7,6 +7,7 @@
     "start": "python -m http.server 4173",
     "build": "node build.js",
     "audit:quality": "node tests/quality-audit.js",
+    "audit:lighthouse": "node tests/lighthouse-audit.js",
     "smoke": "npm test && npm run build",
     "smoke:cloudflare": "node tests/deployed-smoke.js",
     "smoke:browsers": "node tests/browser-compatibility.js",
@@ -21,8 +22,13 @@
   "author": "",
   "license": "ISC",
   "description": "",
+  "engines": {
+    "node": ">=22.19"
+  },
   "devDependencies": {
     "axe-core": "^4.14.1",
+    "chrome-launcher": "^1.2.3",
+    "lighthouse": "^13.6.0",
     "playwright": "^1.65.1",
     "qrcode-generator": "^2.0.4",
     "wrangler": "^4.166.0"
