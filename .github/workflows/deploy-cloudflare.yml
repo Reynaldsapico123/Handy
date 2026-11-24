@@ -89,7 +89,9 @@ jobs:
         run: |
           node -e "const fs=require('fs');const html=fs.readFileSync('dist/index.html','utf8');const match=html.match(/<meta name=\"handy-build\" content=\"([a-f0-9]{12})\">/i);if(!match)throw new Error('Build fingerprint missing');const record={url:process.env.PREVIEW_URL,buildId:match[1],deployedAt:new Date().toISOString(),primaryUrl:'https://handy-6on.pages.dev',verification:{status:'pending',checks:[]}};fs.writeFileSync('deployment.json',JSON.stringify(record,null,2)+'\n');"
 
-      - name: Verify live deployment
+      - name: Verify deployed preview
+        env:
+          HANDY_DEPLOYMENT_URL: ${{ steps.cloudflare.outputs.preview_url }}
         run: npm run smoke:cloudflare
 
       - name: Monitor live deployment
