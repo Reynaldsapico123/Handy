@@ -1,6 +1,6 @@
 async function initializeUnitConverter() {
   const mount = document.querySelector("#unitConverterMount");
-  const response = await fetch("unit-converter.html");
+  const response = await window.handyFetchToolFragment("unit-converter");
   if (!response.ok) throw new Error("Could not load the unit converter");
   mount.innerHTML = await response.text();
 

@@ -1,6 +1,6 @@
 async function initializeCurrency() {
   const mount = document.querySelector("#currencyMount");
-  const response = await fetch("currency.html");
+  const response = await window.handyFetchToolFragment("currency");
   if (!response.ok) throw new Error("Could not load currency exchange");
   mount.innerHTML = await response.text();
 

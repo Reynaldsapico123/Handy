@@ -1,6 +1,6 @@
 async function initializeGuides() {
   const mount = document.querySelector("#guidesMount");
-  const response = await fetch("guides.html");
+  const response = await window.handyFetchToolFragment("guides");
   if (!response.ok) throw new Error("Could not load the guides");
   mount.innerHTML = await response.text();
 

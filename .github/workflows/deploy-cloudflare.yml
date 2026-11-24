@@ -58,8 +58,8 @@ jobs:
       - name: Audit production dependencies
         run: npm audit --omit=dev --audit-level=high
 
-      - name: Install Playwright Chromium
-        run: npx playwright install --with-deps chromium
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium firefox webkit
 
       - name: Run tests
         run: npm test
@@ -93,6 +93,11 @@ jobs:
         env:
           HANDY_DEPLOYMENT_URL: ${{ steps.cloudflare.outputs.preview_url }}
         run: npm run smoke:cloudflare
+
+      - name: Verify Firefox and WebKit compatibility
+        env:
+          HANDY_DEPLOYMENT_URL: ${{ steps.cloudflare.outputs.preview_url }}
+        run: npm run smoke:browsers
 
       - name: Monitor live deployment
         run: npm run monitor:deployment

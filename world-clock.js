@@ -1,6 +1,6 @@
 async function initializeWorldClock() {
   const mount = document.querySelector("#worldClockMount");
-  const response = await fetch("world-clock.html");
+  const response = await window.handyFetchToolFragment("world-clock");
   if (!response.ok) throw new Error("Could not load the world clock");
   mount.innerHTML = await response.text();
 

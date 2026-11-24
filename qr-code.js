@@ -1,6 +1,6 @@
 async function initializeQrCode() {
   const mount = document.querySelector("#qrCodeMount");
-  const response = await fetch("qr-code.html");
+  const response = await window.handyFetchToolFragment("qr-code");
   if (!response.ok) throw new Error("Could not load the QR code maker");
   mount.innerHTML = await response.text();
 

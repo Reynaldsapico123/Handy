@@ -24,6 +24,7 @@ Before deploying:
 - Test `/` and `Ctrl/Cmd+K`; confirm Enter opens the selected action.
 - Test Calculator, Unit Converter, Timer, World Clock, Currency, and QR tools.
 - Test QR image scanning and camera permission success/error states; confirm the deployed smoke check allows same-origin camera access.
+- Run the Firefox/WebKit smoke check for core tools, QR decoding, and scanner startup/fallback; Chromium covers camera permission and offline behavior.
 - Test currency online refresh, cached fallback, offline state, and timeout.
 - Test backup download and restore; confirm calculator history and QR text remain unchanged.
 - Test tool hiding/reordering/reset, theme, favorites, and recent tools.

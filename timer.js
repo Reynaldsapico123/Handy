@@ -1,6 +1,6 @@
 async function initializeTimer() {
   const mount = document.querySelector("#timerMount");
-  const response = await fetch("timer.html");
+  const response = await window.handyFetchToolFragment("timer");
   if (!response.ok) throw new Error("Could not load the timer");
   mount.innerHTML = await response.text();
 

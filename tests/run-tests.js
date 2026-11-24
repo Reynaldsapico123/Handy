@@ -16,7 +16,8 @@ const mimeTypes = {
 
 const server = http.createServer((request, response) => {
   const requestPath = new URL(request.url, "http://127.0.0.1").pathname;
-  const requestedPath = requestPath === "/" ? "/index.html" : requestPath;
+  const pagePath = requestPath === "/" ? "/index.html" : requestPath;
+  const requestedPath = path.extname(pagePath) ? pagePath : `${pagePath}.html`;
   const filePath = path.resolve(root, `.${requestedPath}`);
   if (!filePath.startsWith(root)) {
     response.writeHead(403);

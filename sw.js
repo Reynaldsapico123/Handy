@@ -1,14 +1,13 @@
-const CACHE_NAME = "handy-v15";
+const CACHE_NAME = "handy-v16";
 const APP_SHELL = [
   "/",
-  "/index.html",
-  "/calculator.html",
-  "/unit-converter.html",
-  "/timer.html",
-  "/guides.html",
-  "/world-clock.html",
-  "/currency.html",
-  "/qr-code.html",
+  "/calculator",
+  "/unit-converter",
+  "/timer",
+  "/guides",
+  "/world-clock",
+  "/currency",
+  "/qr-code",
   "/icons/handy-192.png",
   "/icons/handy-512.png",
   "/manifest.webmanifest",
@@ -29,7 +28,7 @@ const TOOL_ASSETS = [
 
 self.addEventListener("install", (event) => {
   event.waitUntil((async () => {
-    const response = await fetch("/index.html");
+    const response = await fetch("/");
     if (!response.ok) throw new Error("Could not load the app shell for offline caching.");
     const html = await response.text();
     const assets = [...html.matchAll(/(?:src|href)="([^"]+\.(?:css|js)(?:\?[^"]*)?)"/g)]
@@ -63,7 +62,7 @@ self.addEventListener("fetch", (event) => {
     (async () => {
       try {
         const response = await fetch(event.request);
-        if (response.ok) {
+        if (response.ok && !response.redirected) {
           const cache = await caches.open(CACHE_NAME);
           await cache.put(event.request, response.clone());
         }
@@ -72,7 +71,7 @@ self.addEventListener("fetch", (event) => {
         const cached = await caches.match(event.request);
         if (cached) return cached;
         if (event.request.mode === "navigate") {
-          const appShell = await caches.match("/index.html");
+          const appShell = await caches.match("/");
           if (appShell) return appShell;
         }
         throw error;

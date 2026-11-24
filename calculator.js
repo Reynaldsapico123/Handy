@@ -1,6 +1,6 @@
 async function initializeCalculator() {
   const mount = document.querySelector("#calculatorMount");
-  const response = await fetch("calculator.html");
+  const response = await window.handyFetchToolFragment("calculator");
   if (!response.ok) throw new Error("Could not load the calculator");
   mount.innerHTML = await response.text();
 

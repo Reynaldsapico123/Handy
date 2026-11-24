@@ -62,6 +62,11 @@ const toolIdsByName = Object.fromEntries(
 const toolScriptLoads = new Map();
 const scriptLoads = new Map();
 
+window.handyFetchToolFragment = async function (name) {
+  const response = await fetch(name);
+  return response.status === 404 ? fetch(`${name}.html`) : response;
+};
+
 function loadScript(source) {
   const buildId = document.querySelector('meta[name="handy-build"]')?.content || "development";
   const url = new URL(source, window.location.href);
