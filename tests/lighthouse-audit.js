@@ -17,48 +17,61 @@ async function run() {
 
   const lighthouseModule = await import("lighthouse");
   const lighthouse = lighthouseModule.default;
+  const targets = [
+    { name: "Homepage", query: {} },
+    { name: "Calculator", query: { tool: "calculator" } },
+    { name: "Currency", query: { tool: "currency" } },
+    { name: "QR scanner", query: { tool: "qr", mode: "scan" } }
+  ];
   const chrome = await chromeLauncher.launch({
     chromePath: chromium.executablePath(),
     chromeFlags: ["--headless", "--no-sandbox", "--disable-dev-shm-usage"]
   });
 
   try {
-    const result = await lighthouse(deploymentUrl, {
-      port: chrome.port,
-      output: "json",
-      logLevel: "error",
-      onlyCategories: ["performance"],
-      formFactor: "mobile",
-      throttlingMethod: "simulate",
-      screenEmulation: {
-        mobile: true,
-        width: 390,
-        height: 844,
-        deviceScaleFactor: 1,
-        disabled: false
+    for (const target of targets) {
+      const targetUrl = new URL("/", parsedUrl);
+      for (const [key, value] of Object.entries(target.query)) {
+        targetUrl.searchParams.set(key, value);
       }
-    });
-    if (!result) throw new Error("Lighthouse did not return a report.");
 
-    const performanceScore = Math.round(result.lhr.categories.performance.score * 100);
-    const lcpMs = result.lhr.audits["largest-contentful-paint"].numericValue;
-    const cls = result.lhr.audits["cumulative-layout-shift"].numericValue;
-    assert(Number.isFinite(performanceScore), "Lighthouse did not produce a performance score.");
-    assert(Number.isFinite(lcpMs), "Lighthouse did not measure Largest Contentful Paint.");
-    assert(Number.isFinite(cls), "Lighthouse did not measure Cumulative Layout Shift.");
+      const result = await lighthouse(targetUrl.href, {
+        port: chrome.port,
+        output: "json",
+        logLevel: "error",
+        onlyCategories: ["performance"],
+        formFactor: "mobile",
+        throttlingMethod: "simulate",
+        screenEmulation: {
+          mobile: true,
+          width: 390,
+          height: 844,
+          deviceScaleFactor: 1,
+          disabled: false
+        }
+      });
+      if (!result) throw new Error(`Lighthouse did not return a report for ${target.name}.`);
 
-    console.log(
-      `Mobile Lighthouse: score=${performanceScore} (informational), LCP=${Math.round(lcpMs)}ms, CLS=${cls.toFixed(3)}.`
-    );
-    assert(
-      lcpMs <= maximumLcpMs,
-      `LCP ${Math.round(lcpMs)}ms exceeds the ${maximumLcpMs}ms budget.`
-    );
-    assert(
-      cls <= maximumCls,
-      `CLS ${cls.toFixed(3)} exceeds the ${maximumCls} budget.`
-    );
-    console.log("Mobile Lighthouse performance budget passed.");
+      const performanceScore = Math.round(result.lhr.categories.performance.score * 100);
+      const lcpMs = result.lhr.audits["largest-contentful-paint"].numericValue;
+      const cls = result.lhr.audits["cumulative-layout-shift"].numericValue;
+      assert(Number.isFinite(performanceScore), `${target.name}: Lighthouse did not produce a performance score.`);
+      assert(Number.isFinite(lcpMs), `${target.name}: Lighthouse did not measure Largest Contentful Paint.`);
+      assert(Number.isFinite(cls), `${target.name}: Lighthouse did not measure Cumulative Layout Shift.`);
+
+      console.log(
+        `${target.name} mobile Lighthouse: score=${performanceScore} (informational), LCP=${Math.round(lcpMs)}ms, CLS=${cls.toFixed(3)}.`
+      );
+      assert(
+        lcpMs <= maximumLcpMs,
+        `${target.name}: LCP ${Math.round(lcpMs)}ms exceeds the ${maximumLcpMs}ms budget.`
+      );
+      assert(
+        cls <= maximumCls,
+        `${target.name}: CLS ${cls.toFixed(3)} exceeds the ${maximumCls} budget.`
+      );
+    }
+    console.log("Mobile Lighthouse performance budgets passed for all targets.");
   } finally {
     await chrome.kill();
   }
