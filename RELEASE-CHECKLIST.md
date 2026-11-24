@@ -23,7 +23,7 @@ Before deploying:
 - Open, close, and trap keyboard focus in every tool modal.
 - Test `/` and `Ctrl/Cmd+K`; confirm Enter opens the selected action.
 - Test Calculator, Unit Converter, Timer, World Clock, Currency, and QR tools.
-- Test QR image scanning and camera permission success/error states.
+- Test QR image scanning and camera permission success/error states; confirm the deployed smoke check allows same-origin camera access.
 - Test currency online refresh, cached fallback, offline state, and timeout.
 - Test backup download and restore; confirm calculator history and QR text remain unchanged.
 - Test tool hiding/reordering/reset, theme, favorites, and recent tools.

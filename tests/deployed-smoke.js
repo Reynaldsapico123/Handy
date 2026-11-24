@@ -21,30 +21,40 @@ const deploymentUrl = process.env.HANDY_DEPLOYMENT_URL ||
   "https://handy-6on.pages.dev";
 
 async function run() {
-  const browser = await chromium.launch({ headless: true });
+  const browser = await chromium.launch({
+    headless: true,
+    args: ["--use-fake-device-for-media-stream", "--use-fake-ui-for-media-stream"]
+  });
   const context = await browser.newContext({
     viewport: { width: 390, height: 844 },
     serviceWorkers: "allow"
   });
-  const page = await context.newPage();
   const consoleErrors = [];
   const cspViolations = [];
-  page.on("console", (message) => {
-    const text = message.text();
-    if (/content security policy/i.test(text)) {
-      cspViolations.push(text);
-    } else if (message.type() === "error") {
-      consoleErrors.push(text);
-    }
-  });
 
   try {
+    await context.grantPermissions(["camera"], { origin: new URL(deploymentUrl).origin });
+    const page = await context.newPage();
+    page.on("console", (message) => {
+      const text = message.text();
+      if (/content security policy/i.test(text)) {
+        cspViolations.push(text);
+      } else if (message.type() === "error") {
+        consoleErrors.push(text);
+      }
+    });
+
     const response = await page.goto(deploymentUrl, { waitUntil: "networkidle" });
     assert(response, "The deployment did not return an HTTP response.");
     const policy = response.headers()["content-security-policy"];
     assert(policy, "The deployment is missing the Content Security Policy header.");
     assert.match(policy, /default-src 'self'/);
     assert.match(policy, /connect-src 'self' https:\/\/open\.er-api\.com/);
+    const permissionsPolicy = response.headers()["permissions-policy"];
+    assert(permissionsPolicy, "The deployment is missing the Permissions Policy header.");
+    assert.match(permissionsPolicy, /camera=\(self\)/);
+    assert.match(permissionsPolicy, /geolocation=\(\)/);
+    assert.match(permissionsPolicy, /microphone=\(\)/);
     assert.strictEqual(await page.title(), "Handy — Everyday tools for everyone");
     assert.strictEqual(await page.locator(".tool-card").count(), 6);
     const liveBuildId = await page.evaluate(() =>
@@ -104,6 +114,22 @@ async function run() {
     await page.waitForFunction(() =>
       document.querySelector("#qrScanText").textContent === "https://deployed-smoke.example"
     );
+    await page.click("#qrCameraStart");
+    await page.waitForFunction(
+      () => !document.querySelector("#qrCameraFrame").hidden,
+      null,
+      { timeout: 10000 }
+    );
+    await page.waitForFunction(
+      () =>
+        document.querySelector("#qrScanStatus").textContent ===
+        "Align the QR code inside the frame.",
+      null,
+      { timeout: 10000 }
+    );
+    assert(await page.locator("#qrCameraVideo").evaluate((video) => Boolean(video.srcObject)));
+    await page.click("#qrCameraStop");
+    await page.waitForFunction(() => document.querySelector("#qrCameraFrame").hidden);
     await page.keyboard.press("Escape");
 
     await page.locator("#toolCustomizer summary").click();
