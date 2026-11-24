@@ -99,6 +99,11 @@ jobs:
           HANDY_DEPLOYMENT_URL: ${{ steps.cloudflare.outputs.preview_url }}
         run: npm run audit:lighthouse
 
+      - name: Audit mobile tool interaction performance
+        env:
+          HANDY_DEPLOYMENT_URL: ${{ steps.cloudflare.outputs.preview_url }}
+        run: npm run audit:interactions
+
       - name: Verify Firefox and WebKit compatibility
         env:
           HANDY_DEPLOYMENT_URL: ${{ steps.cloudflare.outputs.preview_url }}

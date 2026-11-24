@@ -8,6 +8,7 @@
     "build": "node build.js",
     "audit:quality": "node tests/quality-audit.js",
     "audit:lighthouse": "node tests/lighthouse-audit.js",
+    "audit:interactions": "node tests/tool-interaction-audit.js",
     "smoke": "npm test && npm run build",
     "smoke:cloudflare": "node tests/deployed-smoke.js",
     "smoke:browsers": "node tests/browser-compatibility.js",
