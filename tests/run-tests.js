@@ -5,6 +5,7 @@ const assert = require("assert");
 const { chromium } = require("playwright");
 
 const root = path.resolve(__dirname, "..");
+let releaseFixture = null;
 const mimeTypes = {
   ".html": "text/html",
   ".css": "text/css",
@@ -30,8 +31,20 @@ const server = http.createServer((request, response) => {
       response.end("Not found");
       return;
     }
+    let responseBody = data;
+    if (releaseFixture && requestPath === "/") {
+      responseBody = data.toString("utf8").replace(
+        /(<meta name="handy-build" content=")[^"]+(")/,
+        `$1${releaseFixture.buildId}$2`
+      );
+    } else if (releaseFixture && requestPath === "/sw.js") {
+      responseBody = data.toString("utf8").replace(
+        /const CACHE_NAME = "handy-v\d+";/,
+        `const CACHE_NAME = "${releaseFixture.cacheName}";`
+      );
+    }
     response.writeHead(200, { "Content-Type": mimeTypes[path.extname(filePath)] || "application/octet-stream" });
-    response.end(data);
+    response.end(responseBody);
   });
 });
 
@@ -721,6 +734,56 @@ async function run() {
       await offlineContext.close();
     }
 
+    const updateContext = await browser.newContext({ serviceWorkers: "allow" });
+    try {
+      const updatePage = await updateContext.newPage();
+      await updatePage.addInitScript(() => {
+        localStorage.setItem("handy-welcome-dismissed", "true");
+      });
+      await updatePage.goto("http://127.0.0.1:4174/", { waitUntil: "networkidle" });
+      await updatePage.waitForFunction(() => navigator.serviceWorker.controller !== null);
+      await updatePage.reload({ waitUntil: "networkidle" });
+      await updatePage.waitForFunction(async () =>
+        (await caches.keys()).includes("handy-v16")
+      );
+
+      releaseFixture = { buildId: "release-v2", cacheName: "handy-v17" };
+      await updatePage.evaluate(async () => {
+        const registration = await navigator.serviceWorker.getRegistration();
+        if (!registration) throw new Error("The app service worker was not registered.");
+        await registration.update();
+      });
+      await updatePage.waitForSelector("#updateNotice:not([hidden])");
+      await updatePage.click("#updateNow");
+      await updatePage.waitForFunction(() =>
+        document.querySelector('meta[name="handy-build"]')?.content === "release-v2"
+      );
+      await updatePage.waitForFunction(async () => {
+        const cacheNames = await caches.keys();
+        return cacheNames.includes("handy-v17") && !cacheNames.includes("handy-v16");
+      });
+      const updatedCacheAssets = await updatePage.evaluate(async () => {
+        const cache = await caches.open("handy-v17");
+        return (await cache.keys()).map((request) => new URL(request.url).pathname + new URL(request.url).search);
+      });
+      assert(
+        updatedCacheAssets.includes("/calculator.js?v=release-v2"),
+        "The new release should cache its versioned tool script."
+      );
+
+      await updateContext.setOffline(true);
+      await updatePage.reload({ waitUntil: "domcontentloaded" });
+      assert.strictEqual(
+        await updatePage.locator('meta[name="handy-build"]').getAttribute("content"),
+        "release-v2"
+      );
+      await updatePage.locator("#toolGrid").getByRole("button", { name: "Open Calculator" }).click();
+      await updatePage.waitForSelector("#calculatorModal:not([hidden])");
+    } finally {
+      releaseFixture = null;
+      await updateContext.close();
+    }
+
     const directLinkContext = await browser.newContext({ serviceWorkers: "block" });
     try {
       const directPage = await directLinkContext.newPage();
@@ -1222,7 +1285,7 @@ async function run() {
     assert.strictEqual(await page.locator("#timerMinutes").inputValue(), "0");
     assert.strictEqual(await page.locator("#timerSeconds").inputValue(), "0");
 
-    console.log("All browser checks passed, including offline scanning and settings backup.");
+    console.log("All browser checks passed, including service-worker updates, offline scanning, and settings backup.");
   } finally {
     await browser.close();
     await new Promise((resolve) => server.close(resolve));
