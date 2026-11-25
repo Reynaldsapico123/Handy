@@ -76,6 +76,9 @@ jobs:
       - name: Audit data resilience
         run: npm run audit:resilience
 
+      - name: Audit PWA install and update UX
+        run: npm run audit:pwa
+
       - name: Audit visual regressions
         run: npm run audit:visual
 
