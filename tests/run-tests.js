@@ -878,6 +878,15 @@ async function run() {
       assert.match(await directPage.locator("#travelBudgetSpent").textContent(), /45/);
       assert.match(await directPage.locator("#travelBudgetRemaining").textContent(), /955/);
       assert.strictEqual(await directPage.locator("#travelBudgetProgress").getAttribute("aria-valuenow"), "5");
+      const expenseCsvDownload = directPage.waitForEvent("download");
+      await directPage.click("#exportTravelExpenses");
+      const expenseCsv = await expenseCsvDownload;
+      assert.strictEqual(expenseCsv.suggestedFilename(), "tokyo-getaway-expenses.csv");
+      const expenseCsvPath = await expenseCsv.path();
+      const expenseCsvText = await fs.promises.readFile(expenseCsvPath, "utf8");
+      assert.match(expenseCsvText, /Tokyo getaway/);
+      assert.match(expenseCsvText, /Train ticket/);
+      assert.match(expenseCsvText, /transport/);
       await directPage.click("#printSharedTrip");
       assert.strictEqual(await directPage.evaluate(() => window.printCalled), true);
       assert.strictEqual(await directPage.locator("#printTripName").textContent(), "Tokyo getaway");

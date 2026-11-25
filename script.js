@@ -1009,6 +1009,7 @@ const travelBudgetCurrency = document.querySelector("#travelBudgetCurrency");
 const travelBudgetSpent = document.querySelector("#travelBudgetSpent");
 const travelBudgetRemaining = document.querySelector("#travelBudgetRemaining");
 const travelBudgetStatus = document.querySelector("#travelBudgetStatus");
+const exportTravelExpensesButton = document.querySelector("#exportTravelExpenses");
 const travelExpenseTitle = document.querySelector("#travelExpenseTitle");
 const travelExpenseAmount = document.querySelector("#travelExpenseAmount");
 const travelExpenseCategory = document.querySelector("#travelExpenseCategory");
@@ -1782,6 +1783,53 @@ function safeDownloadName(value) {
     .slice(0, 60) || "handy-trip";
 }
 
+function escapeCsvValue(value) {
+  let text = String(value ?? "");
+  if (/^[=+\-@]/.test(text)) text = `'${text}`;
+  return `"${text.replace(/"/g, '""')}"`;
+}
+
+function createTravelExpenseCsv(kit, budget) {
+  const spent = budget.expenses.reduce((sum, expense) => sum + expense.amount, 0);
+  const rows = [
+    ["Trip", "Destination", "Budget", "Budget currency", "Spent", "Expense", "Amount", "Category"],
+    [
+      kit.name,
+      kit.destination,
+      budget.limit,
+      budget.currency,
+      spent,
+      "",
+      "",
+      ""
+    ],
+    ...budget.expenses.map((expense) => [
+      "",
+      "",
+      "",
+      "",
+      "",
+      expense.title,
+      expense.amount,
+      expense.category
+    ])
+  ];
+  return `\ufeff${rows.map((row) => row.map(escapeCsvValue).join(",")).join("\r\n")}\r\n`;
+}
+
+function downloadTravelExpenseCsv(kit, budget) {
+  const csv = createTravelExpenseCsv(kit, budget);
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const download = document.createElement("a");
+  download.href = url;
+  download.download = `${safeDownloadName(kit.name)}-expenses.csv`;
+  document.body.append(download);
+  download.click();
+  download.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 0);
+}
+
 function getTripDateDuration(startDate, endDate) {
   if (!startDate || !endDate) return "";
   const start = new Date(`${startDate}T12:00:00`);
@@ -1984,6 +2032,7 @@ function persistActiveBudget(budget) {
 function renderTravelBudget() {
   const activeTrip = getActiveTravelKit();
   const budget = getActiveBudget();
+  exportTravelExpensesButton.disabled = !activeTrip;
   travelBudgetLimit.value = budget.limit ? String(budget.limit) : "";
   travelBudgetCurrency.value = budget.currency;
   const spent = budget.expenses.reduce((sum, expense) => sum + expense.amount, 0);
@@ -2183,6 +2232,12 @@ exportTravelCalendarButton.addEventListener("click", () => {
     getActiveItinerary()
   );
   travelItineraryStatus.textContent = "Trip calendar downloaded.";
+});
+exportTravelExpensesButton.addEventListener("click", () => {
+  const kit = getActiveTravelKit();
+  if (!kit) return;
+  downloadTravelExpenseCsv(kit, getActiveBudget());
+  travelBudgetStatus.textContent = "Expense CSV downloaded.";
 });
 addTravelExpense.addEventListener("click", addTravelBudgetExpense);
 travelExpenseTitle.addEventListener("keydown", (event) => {

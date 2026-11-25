@@ -996,6 +996,19 @@ body.dark .saved-tool-icon { background: #302e43; }
 }
 .travel-budget-heading h3 { margin: 0; font-size: 15px; }
 .travel-budget-heading span { color: var(--muted); font-size: 12px; }
+.travel-expense-export {
+  min-height: 36px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--text);
+  background: var(--surface);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.travel-expense-export:disabled { opacity: 0.5; cursor: not-allowed; }
 .travel-budget-summary,
 .travel-expense-form {
   display: grid;
@@ -1903,6 +1916,7 @@ body.dark .connection-status[data-state="offline"] { color: #f3c27f; }
   .travel-checklist-add button,
   .travel-itinerary-form button,
   .travel-calendar-export,
+  .travel-expense-export,
   .travel-timeline-calendar,
   .travel-expense-form button {
     min-height: 44px;
