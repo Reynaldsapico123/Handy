@@ -540,6 +540,29 @@
         <p>Currency exchange requests the latest USD exchange rates from open.er-api.com. Handy caches app files and saved currency rates for offline use. QR and calculator work does not send its content to a server.</p>
         <button type="button" id="clearLocalData" class="privacy-clear-button">Clear Handy local data</button>
         <p class="privacy-status" id="privacyStatus" role="status" aria-live="polite"></p>
+        <section class="feedback-panel" aria-labelledby="feedbackTitle">
+          <h3 id="feedbackTitle">Local feedback draft</h3>
+          <p>Saved only in this browser. Nothing is sent automatically.</p>
+          <label>
+            Category
+            <select id="feedbackCategory">
+              <option value="bug">Bug or problem</option>
+              <option value="feature">Feature idea</option>
+              <option value="accessibility">Accessibility</option>
+              <option value="praise">Something worked well</option>
+            </select>
+          </label>
+          <label>
+            Details
+            <textarea id="feedbackDetails" maxlength="2000" rows="4" placeholder="Describe what happened or what you would improve"></textarea>
+          </label>
+          <div class="feedback-actions">
+            <button type="button" id="saveFeedback">Save draft</button>
+            <button type="button" id="exportFeedback">Export .txt</button>
+            <button type="button" id="openFeedbackIssue">Open issue form</button>
+          </div>
+          <p class="feedback-status" id="feedbackStatus" role="status" aria-live="polite"></p>
+        </section>
         <section class="diagnostics-panel" aria-labelledby="diagnosticsTitle">
           <h3 id="diagnosticsTitle">App diagnostics</h3>
           <dl class="diagnostics-list" id="diagnosticsList">

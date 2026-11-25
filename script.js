@@ -28,6 +28,7 @@ const toolLayoutKey = "handy-tool-layout";
 const toolUsageKey = "handy-tool-usage";
 const recentSearchesKey = "handy-recent-searches";
 const personalizationPresetKey = "handy-personalization-preset";
+const feedbackDraftKey = "handy-feedback-draft";
 const backupFormat = "handy-settings-backup";
 const travelKitStorageKey = "handy-travel-kit";
 const backupKeys = [
@@ -2985,6 +2986,12 @@ settingsBackupFile.addEventListener("change", async () => {
 
 const clearLocalDataButton = document.querySelector("#clearLocalData");
 const privacyStatus = document.querySelector("#privacyStatus");
+const feedbackCategory = document.querySelector("#feedbackCategory");
+const feedbackDetails = document.querySelector("#feedbackDetails");
+const saveFeedbackButton = document.querySelector("#saveFeedback");
+const exportFeedbackButton = document.querySelector("#exportFeedback");
+const openFeedbackIssueButton = document.querySelector("#openFeedbackIssue");
+const feedbackStatus = document.querySelector("#feedbackStatus");
 
 clearLocalDataButton.addEventListener("click", () => {
   if (!window.confirm("Clear all Handy preferences, favorites, history, and cached tool data stored in this browser?")) {
@@ -2998,7 +3005,8 @@ clearLocalDataButton.addEventListener("click", () => {
       "handy-calculator-history",
       "handy-qr-settings",
       recentSearchesKey,
-      personalizationPresetKey
+      personalizationPresetKey,
+      feedbackDraftKey
     ];
     handyKeys.forEach((key) => localStorage.removeItem(key));
     privacyStatus.textContent = "Handy local data cleared. Reloading…";
@@ -3008,6 +3016,71 @@ clearLocalDataButton.addEventListener("click", () => {
     console.error("Could not clear Handy local data.", error);
     privacyStatus.textContent = "Local data could not be cleared. Please check browser storage settings.";
   }
+});
+
+function readFeedbackDraft() {
+  try {
+    const draft = JSON.parse(localStorage.getItem(feedbackDraftKey) || "null");
+    if (!draft || typeof draft !== "object") return null;
+    if (!["bug", "feature", "accessibility", "praise"].includes(draft.category)) return null;
+    if (typeof draft.details !== "string") return null;
+    return draft;
+  } catch {
+    return null;
+  }
+}
+
+function getFeedbackText() {
+  return [
+    "Handy feedback",
+    `Category: ${feedbackCategory.value}`,
+    "",
+    feedbackDetails.value.trim() || "(No details provided)"
+  ].join("\n");
+}
+
+const savedFeedback = readFeedbackDraft();
+if (savedFeedback) {
+  feedbackCategory.value = savedFeedback.category;
+  feedbackDetails.value = savedFeedback.details;
+  feedbackStatus.textContent = "Feedback draft restored.";
+}
+
+saveFeedbackButton.addEventListener("click", () => {
+  try {
+    localStorage.setItem(feedbackDraftKey, JSON.stringify({
+      category: feedbackCategory.value,
+      details: feedbackDetails.value.slice(0, 2000)
+    }));
+    feedbackStatus.textContent = "Feedback draft saved on this device.";
+  } catch (error) {
+    console.error("Could not save the feedback draft.", error);
+    feedbackStatus.textContent = "The feedback draft could not be saved.";
+  }
+});
+
+exportFeedbackButton.addEventListener("click", () => {
+  const blob = new Blob([getFeedbackText()], { type: "text/plain;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const download = document.createElement("a");
+  download.href = url;
+  download.download = "handy-feedback.txt";
+  document.body.append(download);
+  download.click();
+  download.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 0);
+  feedbackStatus.textContent = "Feedback text exported.";
+});
+
+openFeedbackIssueButton.addEventListener("click", () => {
+  const title = encodeURIComponent(`Handy feedback: ${feedbackCategory.value}`);
+  const body = encodeURIComponent(getFeedbackText());
+  window.open(
+    `https://github.com/Reynaldsapico123/Handy/issues/new?title=${title}&body=${body}`,
+    "_blank",
+    "noopener,noreferrer"
+  );
+  feedbackStatus.textContent = "GitHub issue form opened. Nothing was sent automatically.";
 });
 
 const diagnosticConnection = document.querySelector("#diagnosticConnection");

@@ -1629,6 +1629,56 @@ footer {
   cursor: pointer;
 }
 .diagnostics-status { min-height: 1em; margin: 8px 0 0 !important; }
+.feedback-panel {
+  margin: 12px 0 0;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+.feedback-panel h3 {
+  margin: 0 0 6px;
+  color: var(--text);
+  font-size: 14px;
+}
+.feedback-panel p {
+  margin: 0 0 10px;
+  font-size: 12px;
+}
+.feedback-panel label {
+  display: grid;
+  gap: 6px;
+  margin: 8px 0;
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 750;
+}
+.feedback-panel select,
+.feedback-panel textarea {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+}
+.feedback-panel select { min-height: 44px; padding: 0 10px; }
+.feedback-panel textarea { resize: vertical; min-height: 96px; padding: 10px; }
+.feedback-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.feedback-actions button {
+  min-height: 44px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  color: var(--text);
+  background: var(--surface);
+  font: inherit;
+  font-weight: 750;
+  cursor: pointer;
+}
+.feedback-status { min-height: 1.4em; margin: 8px 0 0 !important; }
 .footer-brand { font-size: 18px; }
 .footer-brand .brand-mark { width: 30px; height: 30px; border-radius: 9px; }
 .footer-brand .brand-mark svg { width: 19px; }

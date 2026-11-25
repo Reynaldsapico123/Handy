@@ -574,6 +574,26 @@ async function run() {
     );
     assert.strictEqual(await page.locator("#diagnosticUpdateHistory").textContent(), "No updates recorded");
     assert(await page.locator("#privacyPanel").evaluate((panel) => panel.open));
+    await page.selectOption("#feedbackCategory", "feature");
+    await page.fill("#feedbackDetails", "Add a keyboard shortcut guide");
+    await page.click("#saveFeedback");
+    await page.waitForFunction(() =>
+      document.querySelector("#feedbackStatus").textContent.includes("saved")
+    );
+    assert.strictEqual(
+      await page.evaluate(() => JSON.parse(localStorage.getItem("handy-feedback-draft")).details),
+      "Add a keyboard shortcut guide"
+    );
+    const feedbackDownloadPromise = page.waitForEvent("download");
+    await page.click("#exportFeedback");
+    const feedbackDownload = await feedbackDownloadPromise;
+    assert.strictEqual(feedbackDownload.suggestedFilename(), "handy-feedback.txt");
+    await page.evaluate(() => {
+      window.feedbackIssueOpened = null;
+      window.open = (url) => { window.feedbackIssueOpened = url; };
+    });
+    await page.click("#openFeedbackIssue");
+    assert.match(await page.evaluate(() => window.feedbackIssueOpened), /github\.com\/Reynaldsapico123\/Handy\/issues\/new/);
     await page.evaluate(() => localStorage.setItem("unrelated-site-setting", "keep"));
     await page.evaluate(() => localStorage.setItem("handy-calculator-history", JSON.stringify(["private"])));
     page.once("dialog", (dialog) => dialog.accept());
@@ -584,11 +604,13 @@ async function run() {
     const privacyCleanupState = await page.evaluate(() => ({
       unrelated: localStorage.getItem("unrelated-site-setting"),
       calculatorHistory: localStorage.getItem("handy-calculator-history"),
-      theme: localStorage.getItem("handy-theme")
+      theme: localStorage.getItem("handy-theme"),
+      feedbackDraft: localStorage.getItem("handy-feedback-draft")
     }));
     assert.strictEqual(privacyCleanupState.unrelated, "keep");
     assert.strictEqual(privacyCleanupState.calculatorHistory, null);
     assert.strictEqual(privacyCleanupState.theme, null);
+    assert.strictEqual(privacyCleanupState.feedbackDraft, null);
 
     await page.evaluate(() => {
       document.querySelector("#updateNotice").hidden = true;
