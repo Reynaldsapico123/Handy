@@ -37,6 +37,12 @@ jobs:
       - name: Monitor primary deployment
         run: npm run monitor:deployment
 
+      - name: Write operational monitor summary
+        if: always()
+        env:
+          HANDY_ALERT_WEBHOOK_URL: ${{ secrets.HANDY_ALERT_WEBHOOK_URL }}
+        run: node tests/operational-alert.js "${{ job.status }}"
+
       - name: Upload monitoring evidence
         if: always()
         uses: actions/upload-artifact@v6

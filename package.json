@@ -16,6 +16,7 @@
     "audit:pwa": "node tests/pwa-ux-audit.js",
     "release:capture": "node tests/capture-rollback-release.js",
     "release:rollback": "node tests/rollback-deployment.js",
+    "alert:operational": "node tests/operational-alert.js",
     "smoke": "npm test && npm run build",
     "smoke:cloudflare": "node tests/deployed-smoke.js",
     "smoke:browsers": "node tests/browser-compatibility.js",

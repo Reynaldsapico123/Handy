@@ -35,3 +35,9 @@ jobs:
 
       - name: Check production health
         run: npm run health:production
+
+      - name: Write operational health summary
+        if: always()
+        env:
+          HANDY_ALERT_WEBHOOK_URL: ${{ secrets.HANDY_ALERT_WEBHOOK_URL }}
+        run: node tests/operational-alert.js "${{ job.status }}"

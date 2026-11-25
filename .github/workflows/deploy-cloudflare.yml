@@ -139,6 +139,12 @@ jobs:
         if: ${{ failure() && steps.promote.outcome == 'success' }}
         run: npm run release:rollback
 
+      - name: Write operational release summary
+        if: always()
+        env:
+          HANDY_ALERT_WEBHOOK_URL: ${{ secrets.HANDY_ALERT_WEBHOOK_URL }}
+        run: node tests/operational-alert.js "${{ job.status }}"
+
       - name: Upload deployment evidence
         if: always()
         uses: actions/upload-artifact@v6
