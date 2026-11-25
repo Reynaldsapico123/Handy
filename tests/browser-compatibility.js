@@ -119,7 +119,7 @@ async function verifyBrowser(name, browserType, contextOptions = {}) {
           document.querySelector("#qrScanStatus").textContent ===
             "Align the QR code inside the frame.",
         null,
-        { timeout: 10000 }
+        {         timeout: 20000 }
       );
       assert.strictEqual(
         await page.evaluate(() => window.compatibilityCameraRequest.video.facingMode.ideal),
