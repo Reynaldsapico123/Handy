@@ -484,6 +484,11 @@ button, a { -webkit-tap-highlight-color: transparent; }
   cursor: pointer;
 }
 .clear-shortcuts:hover { color: var(--accent-text); }
+.saved-tools-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
 .saved-tools-grid {
   display: grid;
   grid-template-columns: repeat(5, 1fr);

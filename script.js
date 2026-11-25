@@ -685,6 +685,21 @@ document.querySelector("#clearRecent").addEventListener("click", () => {
   showToast("Recent tools cleared");
 });
 
+document.querySelector("#resetPersonalization").addEventListener("click", () => {
+  if (!window.confirm("Reset smart shortcut usage and recent searches? Favorites and tool layout will stay unchanged.")) return;
+  try {
+    localStorage.removeItem(toolUsageKey);
+    localStorage.removeItem(recentSearchesKey);
+    localStorage.removeItem(recentKey);
+    renderSavedTools();
+    closeSearchSuggestions();
+    showToast("Smart shortcut personalization reset.");
+  } catch (error) {
+    console.error("Could not reset smart shortcut personalization.", error);
+    showToast("Could not reset smart shortcuts.");
+  }
+});
+
 renderSavedTools();
 
 const savedTheme = localStorage.getItem("handy-theme");

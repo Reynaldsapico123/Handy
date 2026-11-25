@@ -235,6 +235,19 @@ async function run() {
     await page.click("#resetToolLayout");
     assert.strictEqual(await page.locator("#toolGrid .tool-card").first().locator("h3").textContent(), "Calculator");
 
+    await page.evaluate(() => {
+      localStorage.setItem("handy-tool-usage", JSON.stringify({ Calculator: 3 }));
+      localStorage.setItem("handy-recent-searches", JSON.stringify(["timer"]));
+      localStorage.setItem("handy-recent-tools", JSON.stringify(["Calculator"]));
+    });
+    page.once("dialog", (dialog) => dialog.accept());
+    await page.click("#resetPersonalization");
+    await page.waitForFunction(() =>
+      localStorage.getItem("handy-tool-usage") === null
+      && localStorage.getItem("handy-recent-searches") === null
+      && localStorage.getItem("handy-recent-tools") === null
+    );
+
     const calculatorFavorite = page.getByRole("button", { name: "Favorite Calculator" });
     assert.strictEqual(await calculatorFavorite.getAttribute("aria-pressed"), "false");
     await calculatorFavorite.click();
