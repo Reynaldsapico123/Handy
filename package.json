@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "main": "script.js",
   "scripts": {
-    "test": "node tests/run-tests.js",
+    "test": "node tests/build-cache-version.js && node tests/run-tests.js",
     "start": "python -m http.server 4173",
     "build": "node build.js",
     "audit:quality": "node tests/quality-audit.js",

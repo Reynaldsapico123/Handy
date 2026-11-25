@@ -5,6 +5,13 @@ const path = require("path");
 const root = __dirname;
 const dist = path.join(root, "dist");
 
+function listFiles(directory) {
+  return fs.readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
+    const file = path.join(directory, entry.name);
+    return entry.isDirectory() ? listFiles(file) : [file];
+  });
+}
+
 fs.rmSync(dist, { recursive: true, force: true });
 fs.mkdirSync(dist, { recursive: true });
 
@@ -54,16 +61,23 @@ fs.copyFileSync(
 
 const indexPath = path.join(dist, "index.html");
 const html = fs.readFileSync(indexPath, "utf8");
-const buildFiles = [
-  ...fs.readdirSync(dist).filter((file) => /\.(?:js|css)$/.test(file)),
-  ...fs.readdirSync(vendorDirectory)
-    .filter((file) => /\.(?:js|css)$/.test(file))
-    .map((file) => path.join("vendor", file))
-].sort();
+const buildFiles = listFiles(dist)
+  .map((file) => path.relative(dist, file))
+  .sort();
 const buildFingerprint = crypto.createHash("sha256");
 buildFiles.forEach((file) => {
   buildFingerprint.update(file.replaceAll(path.sep, "/"));
-  buildFingerprint.update(fs.readFileSync(path.join(dist, file)));
+  const contents = fs.readFileSync(path.join(dist, file));
+  if (file === "sw.js") {
+    buildFingerprint.update(
+      contents.toString("utf8").replace(
+        /const CACHE_NAME = "handy-v\d+";/,
+        'const CACHE_NAME = "handy-build";'
+      )
+    );
+  } else {
+    buildFingerprint.update(contents);
+  }
 });
 const buildId = buildFingerprint.digest("hex").slice(0, 12);
 const stampedHtml = html.replace(
@@ -76,5 +90,16 @@ const versionedHtml = stampedHtml.replace(/((?:src|href)=")([^"]+\.(?:js|css))"/
   return `${prefix}${assetUrl}?v=${version}"`;
 });
 fs.writeFileSync(indexPath, versionedHtml);
+
+const serviceWorkerPath = path.join(dist, "sw.js");
+const serviceWorker = fs.readFileSync(serviceWorkerPath, "utf8");
+const versionedServiceWorker = serviceWorker.replace(
+  /const CACHE_NAME = "handy-v\d+";/,
+  `const CACHE_NAME = "handy-${buildId}";`
+);
+if (versionedServiceWorker === serviceWorker) {
+  throw new Error("Could not stamp the service-worker cache with the production build ID.");
+}
+fs.writeFileSync(serviceWorkerPath, versionedServiceWorker);
 
 console.log("Production files created in dist/");
