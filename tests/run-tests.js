@@ -232,6 +232,9 @@ async function run() {
     assert(await page.locator("#toolGrid .tool-card", { hasText: "QR Code Maker" }).evaluate((card) => !card.hidden));
     await qrRow.locator(".tool-order-button[aria-label='Move QR Code Maker earlier']").click();
     assert.strictEqual(await page.locator("#toolGrid .tool-card").nth(4).locator("h3").textContent(), "QR Code Maker");
+    await page.click("[data-personalization-preset='travel']");
+    assert.strictEqual(await page.locator("#toolGrid .tool-card:not([hidden])").count(), 4);
+    assert.match(await page.locator("#personalizationPresetStatus").textContent(), /Travel preset is active/);
     await page.click("#resetToolLayout");
     assert.strictEqual(await page.locator("#toolGrid .tool-card").first().locator("h3").textContent(), "Calculator");
 

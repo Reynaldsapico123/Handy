@@ -27,6 +27,7 @@ const recentKey = "handy-recent-tools";
 const toolLayoutKey = "handy-tool-layout";
 const toolUsageKey = "handy-tool-usage";
 const recentSearchesKey = "handy-recent-searches";
+const personalizationPresetKey = "handy-personalization-preset";
 const backupFormat = "handy-settings-backup";
 const travelKitStorageKey = "handy-travel-kit";
 const backupKeys = [
@@ -34,6 +35,7 @@ const backupKeys = [
   recentKey,
   toolLayoutKey,
   toolUsageKey,
+  personalizationPresetKey,
   travelKitStorageKey,
   "handy-theme",
   "handy-currency-pair",
@@ -523,6 +525,52 @@ let toolLayout = readToolLayout() || {
   hidden: []
 };
 
+const personalizationPresets = {
+  work: ["Calculator", "Unit Converter", "Timer & Stopwatch"],
+  travel: ["Currency Exchange", "World Clock", "QR Code Maker", "Unit Converter"],
+  study: ["Calculator", "Timer & Stopwatch", "World Clock"]
+};
+const personalizationPresetStatus = document.querySelector("#personalizationPresetStatus");
+
+function readPersonalizationPreset() {
+  const preset = localStorage.getItem(personalizationPresetKey);
+  return Object.hasOwn(personalizationPresets, preset) ? preset : null;
+}
+
+function updatePersonalizationPresetUi() {
+  const preset = readPersonalizationPreset();
+  document.querySelectorAll("[data-personalization-preset]").forEach((button) => {
+    const active = button.dataset.personalizationPreset === preset;
+    button.classList.toggle("active", active);
+    button.setAttribute("aria-pressed", active.toString());
+  });
+  if (personalizationPresetStatus) {
+    personalizationPresetStatus.textContent = preset
+      ? `${preset[0].toUpperCase()}${preset.slice(1)} preset is active.`
+      : "Using your custom layout.";
+  }
+}
+
+function applyPersonalizationPreset(presetName) {
+  const presetNames = personalizationPresets[presetName];
+  if (!presetNames) return;
+  toolLayout = {
+    order: [
+      ...presetNames,
+      ...customizableToolNames.filter((name) => !presetNames.includes(name))
+    ],
+    hidden: customizableToolNames.filter((name) => !presetNames.includes(name))
+  };
+  try {
+    localStorage.setItem(personalizationPresetKey, presetName);
+  } catch (error) {
+    console.error("Could not save the personalization preset.", error);
+  }
+  saveToolLayout();
+  updatePersonalizationPresetUi();
+  showToast(`${presetName[0].toUpperCase()}${presetName.slice(1)} preset applied.`);
+}
+
 function saveToolLayout() {
   localStorage.setItem(toolLayoutStorageKey, JSON.stringify(toolLayout));
   applyToolLayout();
@@ -614,9 +662,19 @@ function moveTool(name, offset) {
 
 document.querySelector("#resetToolLayout").addEventListener("click", () => {
   toolLayout = { order: [...customizableToolNames], hidden: [] };
+  localStorage.removeItem(personalizationPresetKey);
   saveToolLayout();
+  updatePersonalizationPresetUi();
   showToast("Tool layout reset.");
 });
+
+document.querySelectorAll("[data-personalization-preset]").forEach((button) => {
+  button.addEventListener("click", () => {
+    applyPersonalizationPreset(button.dataset.personalizationPreset);
+  });
+});
+
+updatePersonalizationPresetUi();
 
 applyToolLayout();
 renderToolCustomizer();
@@ -691,6 +749,7 @@ document.querySelector("#resetPersonalization").addEventListener("click", () => 
     localStorage.removeItem(toolUsageKey);
     localStorage.removeItem(recentSearchesKey);
     localStorage.removeItem(recentKey);
+    localStorage.removeItem(personalizationPresetKey);
     renderSavedTools();
     closeSearchSuggestions();
     showToast("Smart shortcut personalization reset.");
@@ -2764,6 +2823,11 @@ function validateBackupData(data) {
         usage[name] = count;
       }
       validated[key] = usage;
+    } else if (key === personalizationPresetKey) {
+      if (value !== "work" && value !== "travel" && value !== "study") {
+        throw new Error("Backup personalization preset is invalid.");
+      }
+      validated[key] = value;
     } else if (key === "handy-currency-pair") {
       if (
         !isBackupRecord(value)
@@ -2933,7 +2997,8 @@ clearLocalDataButton.addEventListener("click", () => {
       ...backupKeys,
       "handy-calculator-history",
       "handy-qr-settings",
-      recentSearchesKey
+      recentSearchesKey,
+      personalizationPresetKey
     ];
     handyKeys.forEach((key) => localStorage.removeItem(key));
     privacyStatus.textContent = "Handy local data cleared. Reloading…";

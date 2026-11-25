@@ -489,6 +489,40 @@ button, a { -webkit-tap-highlight-color: transparent; }
   align-items: center;
   gap: 4px;
 }
+.personalization-presets {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin: 14px 0 8px;
+}
+.personalization-preset {
+  min-height: 72px;
+  padding: 10px 12px;
+  display: grid;
+  gap: 4px;
+  text-align: left;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+}
+.personalization-preset span {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.35;
+}
+.personalization-preset.active {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+.personalization-preset-status {
+  min-height: 20px;
+  margin: 8px 0 12px;
+  color: var(--muted);
+  font-size: 12px;
+}
 .saved-tools-grid {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
@@ -1967,6 +2001,7 @@ body.dark .connection-status[data-state="offline"] { color: #f3c27f; }
   .search-bar button { width: 48px; height: 48px; justify-content: center; padding: 0; }
   .search-bar button span { display: none; }
   .tool-grid { grid-template-columns: 1fr; }
+  .personalization-presets { grid-template-columns: 1fr; }
   .travel-kit-fields,
   .travel-kit-actions,
   .travel-itinerary-form,

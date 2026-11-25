@@ -189,6 +189,21 @@
       <details class="tool-customizer" id="toolCustomizer">
         <summary>Customize tools</summary>
         <p>Choose which tools appear and move them into your preferred order.</p>
+        <div class="personalization-presets" aria-label="Tool presets">
+          <button type="button" class="personalization-preset" data-personalization-preset="work">
+            <strong>Work</strong>
+            <span>Calculator, converter, timer</span>
+          </button>
+          <button type="button" class="personalization-preset" data-personalization-preset="travel">
+            <strong>Travel</strong>
+            <span>Currency, clock, QR, converter</span>
+          </button>
+          <button type="button" class="personalization-preset" data-personalization-preset="study">
+            <strong>Study</strong>
+            <span>Calculator, timer, clock</span>
+          </button>
+        </div>
+        <p class="personalization-preset-status" id="personalizationPresetStatus" role="status" aria-live="polite">Using your custom layout.</p>
         <div class="tool-customizer-list" id="toolCustomizerList"></div>
         <div class="tool-customizer-actions">
           <button type="button" id="resetToolLayout">Reset layout</button>
