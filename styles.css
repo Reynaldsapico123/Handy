@@ -409,6 +409,29 @@ button, a { -webkit-tap-highlight-color: transparent; }
   cursor: pointer;
 }
 .view-all span { margin-left: 5px; color: var(--accent-text); }
+.tool-category-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: -4px 0 16px;
+}
+.tool-category-filter {
+  min-height: 44px;
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--muted);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.tool-category-filter.active {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent-text);
+}
 
 .tool-grid {
   display: grid;

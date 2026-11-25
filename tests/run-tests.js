@@ -171,6 +171,16 @@ async function run() {
     await page.waitForFunction(() => document.querySelector("#connectionStatusText").textContent === "Online");
 
     await page.click("#themeToggle");
+
+    await page.click("[data-tool-category='calculate']");
+    assert.strictEqual(await page.locator("#toolGrid .tool-card:not(.hidden)").count(), 2);
+    await page.click("[data-tool-category='all']");
+    await page.fill("#searchInput", "timer");
+    await page.keyboard.press("Enter");
+    assert.strictEqual(await page.locator("#toolGrid .tool-card:not(.hidden)").count(), 1);
+    await page.fill("#searchInput", "");
+    await page.locator("#searchInput").dispatchEvent("input");
+    assert(await page.locator("[data-recent-search='timer']").isVisible());
     assert(await page.locator("body").evaluate((body) => body.classList.contains("dark")));
     await page.click("#themeToggle");
 
@@ -189,6 +199,13 @@ async function run() {
     assert.strictEqual(requestedToolScripts.size, 0, "Filtering tools should not load tool modules.");
     assert.strictEqual(await page.locator(".tool-card:not(.hidden)").count(), 1);
     assert.strictEqual(await page.locator("#searchInput").getAttribute("aria-expanded"), "false");
+
+    await page.fill("#searchInput", "");
+    await page.locator("#searchInput").dispatchEvent("input");
+    await page.getByRole("button", { name: "Open Calculator" }).click();
+    await page.waitForSelector("#calculatorModal:not([hidden])");
+    await page.goBack({ waitUntil: "domcontentloaded" });
+    await page.waitForFunction(() => document.querySelector("#calculatorModal").hidden);
 
     await page.fill("#searchInput", "t");
     const searchOptions = page.locator("#searchSuggestionList [role='option']");

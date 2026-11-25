@@ -26,6 +26,7 @@ const favoritesKey = "handy-favorite-tools";
 const recentKey = "handy-recent-tools";
 const toolLayoutKey = "handy-tool-layout";
 const toolUsageKey = "handy-tool-usage";
+const recentSearchesKey = "handy-recent-searches";
 const backupFormat = "handy-settings-backup";
 const travelKitStorageKey = "handy-travel-kit";
 const backupKeys = [
@@ -123,10 +124,12 @@ updateConnectionStatus();
 
 function updateToolUrl(toolId, mode) {
   const url = new URL(window.location.href);
+  const previous = `${url.searchParams.get("tool") || ""}:${url.searchParams.get("mode") || ""}`;
   url.searchParams.set("tool", toolId);
   if (toolId === "qr" && mode === "scan") url.searchParams.set("mode", "scan");
   else url.searchParams.delete("mode");
-  window.history.replaceState(window.history.state, "", url);
+  const next = `${toolId}:${mode === "scan" ? "scan" : ""}`;
+  if (previous !== next) window.history.pushState({ handyTool: toolId }, "", url);
 }
 
 function canonicalToolUrl(toolId, mode) {
@@ -194,6 +197,20 @@ function clearToolUrl(toolId) {
   url.searchParams.delete("mode");
   window.history.replaceState(window.history.state, "", url);
 }
+
+window.addEventListener("popstate", () => {
+  const url = new URL(window.location.href);
+  const toolId = url.searchParams.get("tool");
+  const mode = toolId === "qr" && url.searchParams.get("mode") === "scan" ? "scan" : undefined;
+  if (toolId && toolLinks[toolId]) {
+    openLinkedTool(toolId, mode);
+    return;
+  }
+  Object.values(toolLinks).forEach((tool) => {
+    const modal = document.querySelector(tool.modal);
+    if (modal) modal.hidden = true;
+  });
+});
 
 function observeToolModal(toolId) {
   const modal = document.querySelector(toolLinks[toolId].modal);
@@ -397,6 +414,51 @@ function readStoredList(key) {
   } catch {
     return [];
   }
+}
+
+let activeToolCategory = "all";
+
+function readRecentSearches() {
+  return readStoredList(recentSearchesKey)
+    .filter((query) => typeof query === "string" && query.trim())
+    .slice(0, 5);
+}
+
+function saveRecentSearch(query) {
+  const normalized = query.trim();
+  if (!normalized) return;
+  const searches = [normalized, ...readRecentSearches().filter((item) =>
+    item.toLowerCase() !== normalized.toLowerCase()
+  )].slice(0, 5);
+  try {
+    localStorage.setItem(recentSearchesKey, JSON.stringify(searches));
+  } catch (error) {
+    console.error("Could not save recent searches.", error);
+  }
+}
+
+function escapeSearchHtml(value) {
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+function applyToolFilters() {
+  const query = searchInput.value.trim().toLowerCase();
+  let matches = 0;
+  toolCards.forEach((card) => {
+    const categoryMatches = activeToolCategory === "all"
+      || card.dataset.category === activeToolCategory;
+    const queryMatches = !query
+      || card.dataset.name.includes(query)
+      || card.textContent.toLowerCase().includes(query);
+    const isMatch = categoryMatches && queryMatches;
+    card.classList.toggle("hidden", !isMatch);
+    if (isMatch) matches += 1;
+  });
+  return matches;
 }
 
 function saveFavoriteTools() {
@@ -803,14 +865,9 @@ document.addEventListener("keydown", (event) => {
 searchForm.addEventListener("submit", (event) => {
   event.preventDefault();
   closeSearchSuggestions();
-  const query = searchInput.value.trim().toLowerCase();
-  let matches = 0;
-
-  toolCards.forEach((card) => {
-    const isMatch = !query || card.dataset.name.includes(query) || card.textContent.toLowerCase().includes(query);
-    card.classList.toggle("hidden", !isMatch);
-    if (isMatch) matches += 1;
-  });
+  const query = searchInput.value.trim();
+  if (query) saveRecentSearch(query);
+  const matches = applyToolFilters();
 
   showToast(query ? `${matches} tool${matches === 1 ? "" : "s"} found` : "Showing all tools");
   document.querySelector("#tools").scrollIntoView({ behavior: "smooth", block: "start" });
@@ -819,14 +876,39 @@ searchForm.addEventListener("submit", (event) => {
 searchInput.addEventListener("input", () => {
   const query = searchInput.value.trim().toLowerCase();
   if (!query) {
-    toolCards.forEach((card) => card.classList.remove("hidden"));
-    closeSearchSuggestions();
+    applyToolFilters();
+    const recentSearches = readRecentSearches();
+    if (recentSearches.length) {
+      searchSuggestionList.innerHTML = recentSearches.map((search, index) => `
+        <div
+          class="suggestion-button"
+          id="recent-search-${index}"
+          role="option"
+          aria-selected="false"
+          data-recent-search="${escapeSearchHtml(search)}"
+        ><span>${escapeSearchHtml(search)}</span><span>Recent search</span></div>
+      `).join("");
+      searchSuggestionList.querySelectorAll("[data-recent-search]").forEach((suggestion) => {
+        suggestion.addEventListener("click", () => {
+          searchInput.value = suggestion.dataset.recentSearch;
+          searchInput.dispatchEvent(new Event("input"));
+        });
+      });
+      searchSuggestions.hidden = false;
+      searchInput.setAttribute("aria-expanded", "true");
+      searchSuggestionStatus.textContent = "Recent searches.";
+    } else {
+      closeSearchSuggestions();
+    }
     return;
   }
 
-  const matches = toolCards.filter((card) =>
-    card.dataset.name.includes(query) || card.textContent.toLowerCase().includes(query)
-  );
+  const matches = toolCards.filter((card) => {
+    const categoryMatches = activeToolCategory === "all"
+      || card.dataset.category === activeToolCategory;
+    return categoryMatches
+      && (card.dataset.name.includes(query) || card.textContent.toLowerCase().includes(query));
+  });
   renderSearchSuggestions(matches, query);
 });
 
@@ -897,9 +979,27 @@ document.querySelector("#qrScanShortcut").addEventListener("click", () => {
 
 document.querySelector(".view-all").addEventListener("click", () => {
   searchInput.value = "";
+  activeToolCategory = "all";
+  document.querySelectorAll(".tool-category-filter").forEach((button) => {
+    const active = button.dataset.toolCategory === "all";
+    button.classList.toggle("active", active);
+    button.setAttribute("aria-pressed", active.toString());
+  });
   closeSearchSuggestions();
-  toolCards.forEach((card) => card.classList.remove("hidden"));
+  applyToolFilters();
   showToast("Showing all popular tools");
+});
+
+document.querySelectorAll(".tool-category-filter").forEach((button) => {
+  button.addEventListener("click", () => {
+    activeToolCategory = button.dataset.toolCategory;
+    document.querySelectorAll(".tool-category-filter").forEach((filter) => {
+      const active = filter === button;
+      filter.classList.toggle("active", active);
+      filter.setAttribute("aria-pressed", active.toString());
+    });
+    applyToolFilters();
+  });
 });
 
 function renderSearchSuggestions(matches, query) {
@@ -2817,7 +2917,8 @@ clearLocalDataButton.addEventListener("click", () => {
     const handyKeys = [
       ...backupKeys,
       "handy-calculator-history",
-      "handy-qr-settings"
+      "handy-qr-settings",
+      recentSearchesKey
     ];
     handyKeys.forEach((key) => localStorage.removeItem(key));
     privacyStatus.textContent = "Handy local data cleared. Reloading…";
