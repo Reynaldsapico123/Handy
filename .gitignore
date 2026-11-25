@@ -2,3 +2,4 @@ node_modules/
 dist/
 .tsupgrader/
 deployment.json
+tests/visual-diffs/

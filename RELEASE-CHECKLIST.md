@@ -11,6 +11,8 @@ Pushes to `main` automatically test, build, deploy to Cloudflare Pages, verify t
 
 The quality gate runs axe-core on the homepage and all seven tool dialogs in desktop/mobile and light/dark themes, including both QR creation and scanner modes. It also checks calculator history, currency offline/refresh-error states, QR camera-permission denial, and a decoded scan result. Serious or critical findings fail the gate.
 
+The visual regression gate captures the homepage and every tool dialog at desktop and mobile sizes in light and dark themes. Baseline images are committed under `tests/visual-baselines/`. Run `npm run audit:visual:update` after intentional UI changes, review every updated PNG, and commit the approved baselines. Visual mismatches upload actual and diff images as deployment evidence.
+
 The separate [production monitor](./.github/workflows/monitor-production.yml) runs daily at 08:17 UTC and after successful deployments; it can also be started manually. It checks the live app without Cloudflare credentials; run `npm run health:production` to check it locally.
 
 The deployment workflow runs a simulated mobile Lighthouse audit against the Cloudflare preview for the homepage, Calculator, Currency, and QR scanner. The release budget follows the Core Web Vitals "good" thresholds: LCP at or below 2.5 seconds and CLS at or below 0.10. Lighthouse's overall performance score is reported for context.

@@ -70,6 +70,9 @@ jobs:
       - name: Audit accessibility and performance
         run: npm run audit:quality
 
+      - name: Audit visual regressions
+        run: npm run audit:visual
+
       - name: Deploy to Cloudflare Pages
         id: cloudflare
         run: |
@@ -117,6 +120,8 @@ jobs:
         uses: actions/upload-artifact@v6
         with:
           name: handy-deployment-${{ github.run_id }}
-          path: deployment.json
+          path: |
+            deployment.json
+            tests/visual-diffs/
           if-no-files-found: warn
           retention-days: 90
