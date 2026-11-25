@@ -11,6 +11,7 @@
     "audit:interactions": "node tests/tool-interaction-audit.js",
     "audit:visual": "node tests/visual-regression.js",
     "audit:visual:update": "node tests/visual-regression.js --update",
+    "audit:privacy": "node tests/privacy-audit.js",
     "smoke": "npm test && npm run build",
     "smoke:cloudflare": "node tests/deployed-smoke.js",
     "smoke:browsers": "node tests/browser-compatibility.js",

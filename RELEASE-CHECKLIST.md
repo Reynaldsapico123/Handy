@@ -13,6 +13,8 @@ The quality gate runs axe-core on the homepage and all seven tool dialogs in des
 
 The visual regression gate captures the homepage and every tool dialog at desktop and mobile sizes in light and dark themes. Baseline images are committed under `tests/visual-baselines/`. Run `npm run audit:visual:update` after intentional UI changes, review every updated PNG, and commit the approved baselines. Visual mismatches upload actual and diff images as deployment evidence.
 
+The privacy gate verifies that the app creates no cookies or unexpected third-party requests, exported backups exclude calculator history and QR text, and clear-data removes Handy storage without touching unrelated browser storage.
+
 The separate [production monitor](./.github/workflows/monitor-production.yml) runs daily at 08:17 UTC and after successful deployments; it can also be started manually. It checks the live app without Cloudflare credentials; run `npm run health:production` to check it locally.
 
 The scheduled [deployment monitor](./.github/workflows/deployment-monitor.yml) discovers the live primary URL and build fingerprint independently of local release metadata. Each run creates or updates `deployment.json` as monitoring evidence, so it can run successfully after a clean checkout.

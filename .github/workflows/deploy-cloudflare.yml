@@ -70,6 +70,9 @@ jobs:
       - name: Audit accessibility and performance
         run: npm run audit:quality
 
+      - name: Audit privacy behavior
+        run: npm run audit:privacy
+
       - name: Audit visual regressions
         run: npm run audit:visual
 
