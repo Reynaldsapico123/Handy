@@ -237,7 +237,38 @@ async function openLinkedTool(toolId, mode, settings) {
   const open = tool && window[tool.opener];
   if (typeof open !== "function") {
     console.error(`${tool.name} did not provide its open function.`);
-    showToast(`${tool?.name || "Tool"} is still loading`);
+    const recoveryKey = "handy-open-recovery";
+    let recoveredForBuild = null;
+    try {
+      recoveredForBuild = sessionStorage.getItem(recoveryKey);
+    } catch {}
+    const buildId = document.querySelector('meta[name="handy-build"]')?.content || "unknown";
+    if (recoveredForBuild !== buildId) {
+      try {
+        sessionStorage.setItem(recoveryKey, buildId);
+        if ("serviceWorker" in navigator) {
+          const registrations = await navigator.serviceWorker.getRegistrations();
+          await Promise.all(registrations
+            .filter((registration) => new URL(registration.scope).origin === location.origin)
+            .map((registration) => registration.unregister()));
+        }
+        if ("caches" in window) {
+          const cacheNames = await caches.keys();
+          await Promise.all(cacheNames
+            .filter((name) => name.startsWith("handy-"))
+            .map((name) => caches.delete(name)));
+        }
+        showToast("Refreshing Handy to restore tools…");
+        const url = new URL(location.href);
+        url.searchParams.set("recovered", buildId);
+        location.replace(url);
+      } catch (error) {
+        console.error("Could not recover the stale Handy app.", error);
+        showToast("Please reload the page to restore this tool.");
+      }
+    } else {
+      showToast("This tool could not start. Reload Handy or clear site data.");
+    }
     return false;
   }
   observeToolModal(toolId);
