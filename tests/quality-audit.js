@@ -170,6 +170,61 @@ async function run() {
     ];
     const themes = ["light", "dark"];
 
+    await page.emulateMedia({ reducedMotion: "reduce", contrast: "more" });
+    await page.goto(`http://127.0.0.1:${server.address().port}/`, { waitUntil: "load" });
+    await page.addScriptTag({ path: require.resolve("axe-core/axe.min.js") });
+    const preferenceState = await page.evaluate(() => ({
+      reducedMotion: matchMedia("(prefers-reduced-motion: reduce)").matches,
+      highContrast: matchMedia("(prefers-contrast: more)").matches,
+      overflow: document.documentElement.scrollWidth > document.documentElement.clientWidth
+    }));
+    if (!preferenceState.reducedMotion) {
+      throw new Error("Reduced-motion preference was not active in the quality audit.");
+    }
+    if (!preferenceState.highContrast) {
+      throw new Error("High-contrast preference was not active in the quality audit.");
+    }
+    if (preferenceState.overflow) {
+      throw new Error("Homepage overflows under reduced-motion/high-contrast preferences.");
+    }
+    await assertAccessible(page, "reduced-motion and high-contrast homepage");
+    await page.emulateMedia({ reducedMotion: "no-preference", contrast: "no-preference" });
+
+    await page.emulateMedia({ forcedColors: "active" });
+    await page.goto(`http://127.0.0.1:${server.address().port}/`, { waitUntil: "load" });
+    await page.addScriptTag({ path: require.resolve("axe-core/axe.min.js") });
+    if (!await page.evaluate(() => matchMedia("(forced-colors: active)").matches)) {
+      throw new Error("Forced-colors preference was not active in the quality audit.");
+    }
+    await assertAccessible(page, "forced-colors homepage");
+    await page.emulateMedia({ forcedColors: "none" });
+
+    await page.setViewportSize({ width: 640, height: 450 });
+    await page.waitForTimeout(100);
+    const zoomedLayout = await page.evaluate(() => ({
+      scrollWidth: document.documentElement.scrollWidth,
+      clientWidth: document.documentElement.clientWidth,
+      overflowing: [...document.querySelectorAll("body *")]
+        .filter((element) => element.getClientRects().length > 0)
+        .map((element) => ({
+          tag: element.tagName,
+          id: element.id,
+          className: typeof element.className === "string" ? element.className : "",
+          right: Math.round(element.getBoundingClientRect().right)
+        }))
+        .filter((element) => element.right > document.documentElement.clientWidth)
+        .slice(0, 10)
+    }));
+    const zoomedOverflow = zoomedLayout.scrollWidth > zoomedLayout.clientWidth;
+    if (zoomedOverflow) {
+      throw new Error(
+        `Homepage overflows at 200%-zoom reflow width (640px): ` +
+        `${zoomedLayout.scrollWidth}px > ${zoomedLayout.clientWidth}px\n` +
+        JSON.stringify(zoomedLayout.overflowing, null, 2)
+      );
+    }
+    console.log("Preference passed: reduced motion, high contrast, forced colors, and 200%-zoom reflow.");
+
     for (const viewport of viewports) {
       await page.setViewportSize({ width: viewport.width, height: viewport.height });
       for (const theme of themes) {

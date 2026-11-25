@@ -2004,20 +2004,60 @@ body.dark .connection-status[data-state="offline"] { color: #f3c27f; }
     scroll-behavior: auto !important;
     transition-duration: 0.01ms !important;
   }
+}
 
-  @media (forced-colors: active) {
-    :focus-visible {
-      outline: 3px solid CanvasText;
-    }
-    .travel-kit-empty,
-    .travel-budget-progress,
-    .travel-timeline-item,
-    .travel-expense-item {
-      border: 1px solid CanvasText;
-    }
-    .travel-budget-progress span {
-      background: Highlight;
-    }
+@media (prefers-contrast: more) {
+  :root {
+    --line: #777886;
+  }
+  body {
+    --muted: #4b4c57;
+  }
+  body.dark {
+    --muted: #d2d2dc;
+    --line: #8b8d9a;
+  }
+  button,
+  input,
+  select,
+  textarea,
+  summary,
+  a {
+    outline-offset: 2px;
+  }
+  .tool-card,
+  .saved-tool,
+  .travel-kit-panel,
+  .privacy-panel,
+  .personalization-preset {
+    border-width: 2px;
+  }
+}
+
+@media (forced-colors: active) {
+  :focus-visible {
+    outline: 3px solid CanvasText;
+  }
+  button,
+  input,
+  select,
+  textarea,
+  summary,
+  .tool-card,
+  .saved-tool,
+  .travel-kit-panel,
+  .personalization-preset {
+    border: 1px solid ButtonText;
+  }
+  .travel-kit-empty,
+  .travel-budget-progress,
+  .travel-timeline-item,
+  .travel-expense-item {
+    border: 1px solid CanvasText;
+  }
+  .travel-budget-progress span,
+  .travel-expense-category-bar span {
+    background: Highlight;
   }
 }
 
