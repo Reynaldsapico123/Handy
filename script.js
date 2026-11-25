@@ -1015,6 +1015,8 @@ const travelExpenseAmount = document.querySelector("#travelExpenseAmount");
 const travelExpenseCategory = document.querySelector("#travelExpenseCategory");
 const addTravelExpense = document.querySelector("#addTravelExpense");
 const travelExpenseList = document.querySelector("#travelExpenseList");
+const travelExpenseBreakdownEmpty = document.querySelector("#travelExpenseBreakdownEmpty");
+const travelExpenseCategoryList = document.querySelector("#travelExpenseCategoryList");
 const travelBudgetProgress = document.querySelector("#travelBudgetProgress");
 const travelBudgetProgressBar = document.querySelector("#travelBudgetProgressBar");
 const maximumTravelKits = 10;
@@ -2044,6 +2046,44 @@ function renderTravelBudget() {
   travelBudgetProgress.setAttribute("aria-valuenow", String(Math.round(usage)));
   travelBudgetProgress.classList.toggle("over-budget", spent > budget.limit && budget.limit > 0);
   travelExpenseList.replaceChildren();
+  const categoryTotals = new Map();
+  budget.expenses.forEach((expense) => {
+    categoryTotals.set(expense.category, (categoryTotals.get(expense.category) || 0) + expense.amount);
+  });
+  const categoryLabels = {
+    transport: "Transport",
+    lodging: "Lodging",
+    food: "Food",
+    activities: "Activities",
+    shopping: "Shopping",
+    other: "Other"
+  };
+  travelExpenseCategoryList.replaceChildren();
+  travelExpenseBreakdownEmpty.hidden = categoryTotals.size > 0;
+  [...categoryTotals.entries()]
+    .sort(([, amountA], [, amountB]) => amountB - amountA)
+    .forEach(([category, amount]) => {
+      const percentage = spent > 0 ? (amount / spent) * 100 : 0;
+      const item = document.createElement("li");
+      item.className = "travel-expense-category";
+      item.dataset.category = category;
+      const label = document.createElement("span");
+      label.textContent = categoryLabels[category] || category;
+      const bar = document.createElement("div");
+      bar.className = "travel-expense-category-bar";
+      bar.setAttribute("role", "progressbar");
+      bar.setAttribute("aria-label", `${label.textContent} spending`);
+      bar.setAttribute("aria-valuemin", "0");
+      bar.setAttribute("aria-valuemax", "100");
+      bar.setAttribute("aria-valuenow", String(Math.round(percentage)));
+      const barFill = document.createElement("span");
+      barFill.style.width = `${percentage}%`;
+      bar.append(barFill);
+      const total = document.createElement("strong");
+      total.textContent = `${formatBudgetAmount(amount, budget.currency)} · ${Math.round(percentage)}%`;
+      item.append(label, bar, total);
+      travelExpenseCategoryList.append(item);
+    });
   if (activeTrip && budget.expenses.length === 0) {
     const empty = document.createElement("li");
     empty.className = "travel-expense-empty";

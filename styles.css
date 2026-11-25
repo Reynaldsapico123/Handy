@@ -1043,6 +1043,52 @@ body.dark .saved-tool-icon { background: #302e43; }
   width: 0;
   height: 100%;
   border-radius: inherit;
+}
+.travel-expense-breakdown {
+  margin-top: 12px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--bg);
+}
+.travel-expense-breakdown h4 {
+  margin: 0 0 8px;
+  font-size: 13px;
+}
+.travel-expense-breakdown p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+.travel-expense-breakdown ul {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.travel-expense-category {
+  display: grid;
+  grid-template-columns: minmax(90px, 1fr) minmax(90px, 2fr) auto;
+  gap: 8px;
+  align-items: center;
+  font-size: 12px;
+}
+.travel-expense-category strong {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.travel-expense-category-bar {
+  height: 6px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--line);
+}
+.travel-expense-category-bar span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--accent);
   background: var(--accent);
   transition: width 180ms ease;
 }

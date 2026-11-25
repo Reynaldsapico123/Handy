@@ -878,6 +878,8 @@ async function run() {
       assert.match(await directPage.locator("#travelBudgetSpent").textContent(), /45/);
       assert.match(await directPage.locator("#travelBudgetRemaining").textContent(), /955/);
       assert.strictEqual(await directPage.locator("#travelBudgetProgress").getAttribute("aria-valuenow"), "5");
+      assert.strictEqual(await directPage.locator("#travelExpenseCategoryList [data-category='transport']").count(), 1);
+      assert.match(await directPage.locator("#travelExpenseCategoryList [data-category='transport']").textContent(), /100%/);
       const expenseCsvDownload = directPage.waitForEvent("download");
       await directPage.click("#exportTravelExpenses");
       const expenseCsv = await expenseCsvDownload;
