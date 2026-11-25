@@ -1,14 +1,15 @@
 const assert = require("assert");
-const { firefox, webkit } = require("playwright");
+const { chromium, firefox, webkit, devices } = require("playwright");
 const { runServiceWorkerUpdateTest } = require("./service-worker-update");
 
 const deploymentUrl = process.env.HANDY_DEPLOYMENT_URL ||
   "https://handy-6on.pages.dev";
 
-async function verifyBrowser(name, browserType) {
+async function verifyBrowser(name, browserType, contextOptions = {}) {
   const browser = await browserType.launch({ headless: true });
   const context = await browser.newContext({
-    viewport: { width: 390, height: 844 }
+    viewport: { width: 390, height: 844 },
+    ...contextOptions
   });
   const pageErrors = [];
   const cspViolations = [];
@@ -42,6 +43,34 @@ async function verifyBrowser(name, browserType) {
     assert.match(headers["permissions-policy"] || "", /camera=\(self\)/);
     assert.strictEqual(await page.title(), "Handy — Everyday tools for everyone");
     assert.strictEqual(await page.locator(".tool-card").count(), 6);
+    const mobileLayout = await page.evaluate(() => ({
+      scrollWidth: document.documentElement.scrollWidth,
+      clientWidth: document.documentElement.clientWidth,
+      touchTargets: [...document.querySelectorAll(
+        "#menuToggle, #themeToggle, #installApp, #qrScanShortcut"
+      )]
+        .filter((element) => element.getClientRects().length > 0)
+        .map((element) => {
+          const rect = element.getBoundingClientRect();
+          return {
+            name: element.getAttribute("aria-label") || element.textContent.trim() || element.id,
+            width: Math.round(rect.width),
+            height: Math.round(rect.height)
+          };
+        })
+    }));
+    assert(
+      mobileLayout.scrollWidth <= mobileLayout.clientWidth,
+      `${name} has horizontal overflow: ${mobileLayout.scrollWidth}px > ${mobileLayout.clientWidth}px`
+    );
+    const undersizedTargets = mobileLayout.touchTargets.filter((target) =>
+      target.width < 44 || target.height < 44
+    );
+    assert.deepStrictEqual(
+      undersizedTargets,
+      [],
+      `${name} has undersized mobile touch targets.`
+    );
 
     await page.getByRole("button", { name: "Open Calculator" }).click();
     await page.waitForSelector("#calculatorModal:not([hidden])");
@@ -118,6 +147,14 @@ async function verifyBrowser(name, browserType) {
 }
 
 async function run() {
+  const deviceProfiles = [
+    ["Chromium · Pixel 7", chromium, devices["Pixel 7"]],
+    ["WebKit · iPhone 13", webkit, devices["iPhone 13"]]
+  ];
+  for (const [name, browserType, device] of deviceProfiles) {
+    await verifyBrowser(name, browserType, device);
+  }
+
   for (const [name, browserType] of [["Firefox", firefox], ["WebKit", webkit]]) {
     await runServiceWorkerUpdateTest(browserType, name);
     await verifyBrowser(name, browserType);

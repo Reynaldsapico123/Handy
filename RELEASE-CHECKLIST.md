@@ -39,6 +39,7 @@ Before deploying:
 - Test Calculator, Unit Converter, Timer, World Clock, Currency, and QR tools.
 - Test QR image scanning and camera permission success/error states; confirm the deployed smoke check allows same-origin camera access.
 - Run the Firefox/WebKit smoke check for core tools, QR decoding, scanner startup/fallback, and service-worker update/offline recovery; Chromium covers camera permission and offline behavior.
+- Run the Chromium Pixel 7 and WebKit iPhone 13 emulated profiles in `npm run smoke:browsers`, then complete the [real-device checklist](./REAL-DEVICE-CHECKLIST.md) on available iOS and Android phones.
 - Test currency online refresh, cached fallback, offline state, and timeout.
 - Test backup download and restore; confirm calculator history and QR text remain unchanged.
 - Test tool hiding/reordering/reset, theme, favorites, and recent tools.
