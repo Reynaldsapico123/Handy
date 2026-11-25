@@ -15,6 +15,8 @@ The visual regression gate captures the homepage and every tool dialog at deskto
 
 The privacy gate verifies that the app creates no cookies or unexpected third-party requests, exported backups exclude calculator history and QR text, and clear-data removes Handy storage without touching unrelated browser storage.
 
+The resilience gate verifies that malformed local-storage preferences, rate-limited currency responses, oversized backups, unsupported backups, and failed restores fall back or roll back without corrupting saved settings.
+
 The separate [production monitor](./.github/workflows/monitor-production.yml) runs daily at 08:17 UTC and after successful deployments; it can also be started manually. It checks the live app without Cloudflare credentials; run `npm run health:production` to check it locally.
 
 The scheduled [deployment monitor](./.github/workflows/deployment-monitor.yml) discovers the live primary URL and build fingerprint independently of local release metadata. Each run creates or updates `deployment.json` as monitoring evidence, so it can run successfully after a clean checkout.

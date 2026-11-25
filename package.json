@@ -12,6 +12,7 @@
     "audit:visual": "node tests/visual-regression.js",
     "audit:visual:update": "node tests/visual-regression.js --update",
     "audit:privacy": "node tests/privacy-audit.js",
+    "audit:resilience": "node tests/resilience-audit.js",
     "smoke": "npm test && npm run build",
     "smoke:cloudflare": "node tests/deployed-smoke.js",
     "smoke:browsers": "node tests/browser-compatibility.js",

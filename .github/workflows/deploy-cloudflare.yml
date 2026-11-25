@@ -73,6 +73,9 @@ jobs:
       - name: Audit privacy behavior
         run: npm run audit:privacy
 
+      - name: Audit data resilience
+        run: npm run audit:resilience
+
       - name: Audit visual regressions
         run: npm run audit:visual
 

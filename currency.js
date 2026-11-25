@@ -84,11 +84,23 @@ async function initializeCurrency() {
   to.innerHTML = options;
   from.value = "USD";
   to.value = "EUR";
-  const savedCurrencies = JSON.parse(localStorage.getItem("handy-currency-pair") || "null");
-  if (savedCurrencies?.from && savedCurrencies?.to) {
+  let savedCurrencies = null;
+  try {
+    savedCurrencies = JSON.parse(localStorage.getItem("handy-currency-pair") || "null");
+  } catch (error) {
+    console.error("Could not read saved currency preferences.", error);
+  }
+  if (
+    savedCurrencies?.from
+    && savedCurrencies?.to
+    && [...currencies.map(([code]) => code)].includes(savedCurrencies.from)
+    && [...currencies.map(([code]) => code)].includes(savedCurrencies.to)
+  ) {
     from.value = savedCurrencies.from;
     to.value = savedCurrencies.to;
-    if (Number.isFinite(Number(savedCurrencies.amount))) amount.value = savedCurrencies.amount;
+    if (Number.isFinite(Number(savedCurrencies.amount)) && Number(savedCurrencies.amount) >= 0) {
+      amount.value = savedCurrencies.amount;
+    }
   }
 
   function formatResult(value) {
