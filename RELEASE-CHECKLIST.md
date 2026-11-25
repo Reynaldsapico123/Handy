@@ -15,6 +15,8 @@ The visual regression gate captures the homepage and every tool dialog at deskto
 
 The separate [production monitor](./.github/workflows/monitor-production.yml) runs daily at 08:17 UTC and after successful deployments; it can also be started manually. It checks the live app without Cloudflare credentials; run `npm run health:production` to check it locally.
 
+The scheduled [deployment monitor](./.github/workflows/deployment-monitor.yml) discovers the live primary URL and build fingerprint independently of local release metadata. Each run creates or updates `deployment.json` as monitoring evidence, so it can run successfully after a clean checkout.
+
 The deployment workflow runs a simulated mobile Lighthouse audit against the Cloudflare preview for the homepage, Calculator, Currency, and QR scanner. The release budget follows the Core Web Vitals "good" thresholds: LCP at or below 2.5 seconds and CLS at or below 0.10. Lighthouse's overall performance score is reported for context.
 
 It also measures mobile tap-to-ready time for all seven lazy-loaded tools with a throttled 3G connection and 4× CPU slowdown. Each tool must become usable within 2 seconds; live currency rates are mocked so the budget measures local tool readiness rather than an external API.

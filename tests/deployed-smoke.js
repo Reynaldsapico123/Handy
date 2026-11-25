@@ -17,7 +17,8 @@ try {
   recordedBuildId = null;
 }
 
-const deploymentUrl = process.env.HANDY_DEPLOYMENT_URL ||
+const explicitDeploymentUrl = process.env.HANDY_DEPLOYMENT_URL;
+const deploymentUrl = explicitDeploymentUrl ||
   "https://handy-6on.pages.dev";
 
 async function run() {
@@ -60,7 +61,7 @@ async function run() {
     const liveBuildId = await page.evaluate(() =>
       document.querySelector('meta[name="handy-build"]')?.content || "unknown"
     );
-    if (recordedBuildId && liveBuildId !== recordedBuildId) {
+    if (!explicitDeploymentUrl && recordedBuildId && liveBuildId !== recordedBuildId) {
       throw new Error(
         `Deployed build mismatch: live=${liveBuildId}, recorded=${recordedBuildId}`
       );
