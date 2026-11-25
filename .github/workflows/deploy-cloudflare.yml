@@ -82,11 +82,14 @@ jobs:
       - name: Audit visual regressions
         run: npm run audit:visual
 
-      - name: Deploy to Cloudflare Pages
-        id: cloudflare
+      - name: Capture previous release
+        run: npm run release:capture
+
+      - name: Deploy preview to Cloudflare Pages
+        id: preview
         run: |
           set -e
-          output="$(npx wrangler pages deploy dist --project-name=handy)"
+          output="$(npx wrangler pages deploy dist --project-name=handy --branch=preview-${GITHUB_SHA::12})"
           printf '%s\n' "$output"
           preview_url="$(printf '%s\n' "$output" | grep -Eo 'https://[a-z0-9-]+\.handy-6on\.pages\.dev' | head -n 1)"
           if [ -z "$preview_url" ]; then
@@ -97,32 +100,44 @@ jobs:
 
       - name: Record release metadata
         env:
-          PREVIEW_URL: ${{ steps.cloudflare.outputs.preview_url }}
+          PREVIEW_URL: ${{ steps.preview.outputs.preview_url }}
         run: |
           node -e "const fs=require('fs');const html=fs.readFileSync('dist/index.html','utf8');const match=html.match(/<meta name=\"handy-build\" content=\"([a-f0-9]{12})\">/i);if(!match)throw new Error('Build fingerprint missing');const record={url:process.env.PREVIEW_URL,buildId:match[1],deployedAt:new Date().toISOString(),primaryUrl:'https://handy-6on.pages.dev',verification:{status:'pending',checks:[]}};fs.writeFileSync('deployment.json',JSON.stringify(record,null,2)+'\n');"
 
       - name: Verify deployed preview
         env:
-          HANDY_DEPLOYMENT_URL: ${{ steps.cloudflare.outputs.preview_url }}
+          HANDY_DEPLOYMENT_URL: ${{ steps.preview.outputs.preview_url }}
         run: npm run smoke:cloudflare
 
       - name: Audit mobile Lighthouse performance
         env:
-          HANDY_DEPLOYMENT_URL: ${{ steps.cloudflare.outputs.preview_url }}
+          HANDY_DEPLOYMENT_URL: ${{ steps.preview.outputs.preview_url }}
         run: npm run audit:lighthouse
 
       - name: Audit mobile tool interaction performance
         env:
-          HANDY_DEPLOYMENT_URL: ${{ steps.cloudflare.outputs.preview_url }}
+          HANDY_DEPLOYMENT_URL: ${{ steps.preview.outputs.preview_url }}
         run: npm run audit:interactions
 
       - name: Verify Firefox and WebKit compatibility
         env:
-          HANDY_DEPLOYMENT_URL: ${{ steps.cloudflare.outputs.preview_url }}
+          HANDY_DEPLOYMENT_URL: ${{ steps.preview.outputs.preview_url }}
         run: npm run smoke:browsers
+
+      - name: Promote preview to primary
+        id: promote
+        run: npx wrangler pages deploy dist --project-name=handy --branch=main
+
+      - name: Record promoted release metadata
+        run: |
+          node -e "const fs=require('fs');const html=fs.readFileSync('dist/index.html','utf8');const match=html.match(/<meta name=\"handy-build\" content=\"([a-f0-9]{12})\">/i);if(!match)throw new Error('Build fingerprint missing');const record={url:'https://handy-6on.pages.dev',buildId:match[1],deployedAt:new Date().toISOString(),primaryUrl:'https://handy-6on.pages.dev',verification:{status:'pending',checks:[]}};fs.writeFileSync('deployment.json',JSON.stringify(record,null,2)+'\n');"
 
       - name: Monitor live deployment
         run: npm run monitor:deployment
+
+      - name: Roll back failed primary release
+        if: ${{ failure() && steps.promote.outcome == 'success' }}
+        run: npm run release:rollback
 
       - name: Upload deployment evidence
         if: always()
@@ -131,6 +146,7 @@ jobs:
           name: handy-deployment-${{ github.run_id }}
           path: |
             deployment.json
+            .release-rollback.json
             tests/visual-diffs/
           if-no-files-found: warn
           retention-days: 90

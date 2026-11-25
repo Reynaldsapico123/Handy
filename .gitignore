@@ -3,3 +3,4 @@ dist/
 .tsupgrader/
 deployment.json
 tests/visual-diffs/
+.release-rollback.json

@@ -9,6 +9,8 @@ Add these repository secrets under GitHub **Settings â†’ Secrets and variables â
 
 Pushes to `main` automatically test, build, deploy to Cloudflare Pages, verify the primary alias, and upload deployment evidence.
 
+Each deployment first creates a named preview branch and passes preview smoke, Lighthouse, interaction, visual, accessibility, and cross-browser checks. Only then is the verified bundle promoted to the production branch. If primary monitoring fails after promotion, the workflow redeploys the parent Git commit and records rollback evidence.
+
 The quality gate runs axe-core on the homepage and all seven tool dialogs in desktop/mobile and light/dark themes, including both QR creation and scanner modes. It also checks calculator history, currency offline/refresh-error states, QR camera-permission denial, and a decoded scan result. Serious or critical findings fail the gate.
 
 The visual regression gate captures the homepage and every tool dialog at desktop and mobile sizes in light and dark themes. Baseline images are committed under `tests/visual-baselines/`. Run `npm run audit:visual:update` after intentional UI changes, review every updated PNG, and commit the approved baselines. Visual mismatches upload actual and diff images as deployment evidence.
