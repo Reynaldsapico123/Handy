@@ -108,8 +108,13 @@ async function initializeCalculator() {
     return position === tokens.length ? result : null;
   }
 
-  function format(value) {
-    if (!Number.isFinite(value)) return "Cannot divide by zero";
+  function format(value, source = "") {
+    if (!Number.isFinite(value)) {
+      if (/\b\d*\.?\d+\s*\/\s*0(?:\.0*)?(?![.\d])/.test(source)) {
+        return "Cannot divide by zero";
+      }
+      return "Result is too large";
+    }
     return Number.parseFloat(value.toPrecision(12)).toString();
   }
 
@@ -174,13 +179,13 @@ async function initializeCalculator() {
       }
     } else if (action === "percent") {
       const match = expression.match(/(\d*\.?\d+)$/);
-      if (match) expression = expression.slice(0, match.index) + format(Number(match[0]) / 100);
+      if (match) expression = expression.slice(0, match.index) + format(Number(match[0]) / 100, expression);
     } else if (action === "equals") {
       if (!expression) return;
       const result = calculate(expression);
       if (result !== null) {
         const source = expression;
-        const formatted = format(result);
+        const formatted = format(result, source);
         preview.textContent = source.replaceAll("+", " + ").replaceAll("*", " × ").replaceAll("/", " ÷ ").replaceAll("-", " − ") + " =";
         output.textContent = formatted;
         if (Number.isFinite(result)) saveCalculation(source, formatted);
@@ -239,9 +244,19 @@ async function initializeCalculator() {
   });
 
   document.querySelector("#clearCalculatorHistory").addEventListener("click", () => {
+    const previousHistory = [...history];
     history = [];
     localStorage.removeItem(historyKey);
     renderHistory();
+    showToast("Calculation history cleared.", {
+      label: "Undo",
+      onClick: () => {
+        history = previousHistory;
+        localStorage.setItem(historyKey, JSON.stringify(history));
+        renderHistory();
+        showToast("Calculation history restored.");
+      }
+    });
   });
 
   document.addEventListener("keydown", (event) => {
