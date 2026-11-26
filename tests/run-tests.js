@@ -398,6 +398,15 @@ async function run() {
     await page.getByRole("button", { name: "Open World Clock" }).click();
     await page.waitForSelector("#worldClockModal:not([hidden])");
     assert((await page.locator(".clock-card").count()) >= 3);
+    await page.selectOption("#clockCity", "Asia/Tokyo");
+    await page.click("#addClockCity");
+    assert((await page.locator("#clockList .clock-card").filter({ hasText: "Tokyo" }).count()) === 1);
+    await page.locator("#clockList .clock-card").filter({ hasText: "Tokyo" }).locator(".clock-copy").click();
+    await page.waitForFunction(() => window.copiedToolLink?.includes("Tokyo"));
+    await page.locator("#clockList .clock-card").filter({ hasText: "Tokyo" }).locator(".clock-remove").click();
+    assert((await page.locator("#clockList .clock-card").filter({ hasText: "Tokyo" }).count()) === 0);
+    await page.locator("#toast .toast-action").filter({ hasText: "Undo" }).click();
+    assert((await page.locator("#clockList .clock-card").filter({ hasText: "Tokyo" }).count()) === 1);
     await page.keyboard.press("Escape");
 
     let rateRequests = 0;
