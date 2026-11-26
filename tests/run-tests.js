@@ -45,7 +45,7 @@ async function run() {
     serviceWorkers: "block"
   });
   const page = await context.newPage();
-  const consoleErrors = [];
+  const browserErrors = [];
   const requestedToolScripts = new Set();
   page.on("request", (request) => {
     const pathname = new URL(request.url()).pathname;
@@ -58,8 +58,9 @@ async function run() {
     }
   });
   page.on("console", (message) => {
-    if (message.type() === "error") consoleErrors.push(message.text());
+    if (message.type() === "error") browserErrors.push(`console: ${message.text()}`);
   });
+  page.on("pageerror", (error) => browserErrors.push(`pageerror: ${error.message}`));
   await page.addInitScript(() => {
     const listeners = {};
     const registration = {
@@ -75,6 +76,7 @@ async function run() {
       configurable: true,
       value: {
         controller: {},
+        getRegistration: async () => registration,
         register: async () => registration,
         addEventListener() {}
       }
@@ -1396,9 +1398,11 @@ async function run() {
     await new Promise((resolve) => server.close(resolve));
   }
 
-  if (consoleErrors.length) {
-    console.warn(`Browser console warnings/errors: ${consoleErrors.length}`);
-  }
+  assert.strictEqual(
+    browserErrors.length,
+    0,
+    `Unexpected browser console or page errors:\n${browserErrors.join("\n")}`
+  );
 }
 
 run().catch((error) => {
