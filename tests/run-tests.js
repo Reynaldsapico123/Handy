@@ -102,6 +102,18 @@ async function run() {
     assert.strictEqual(requestedToolScripts.size, 0, "Tool scripts should stay unloaded on the home page.");
     await page.waitForSelector("#welcomeModal:not([hidden])");
     assert(await page.locator("[data-welcome-step='0']").isVisible());
+    await page.click("#welcomeSkip");
+    assert(await page.locator("#welcomeModal").evaluate((modal) => modal.hidden));
+    assert.strictEqual(await page.evaluate(() => localStorage.getItem("handy-welcome-dismissed")), "true");
+    assert.strictEqual(await page.evaluate(() => localStorage.getItem("handy-welcome-skipped")), "true");
+    await page.reload({ waitUntil: "networkidle" });
+    assert(await page.locator("#welcomeModal").evaluate((modal) => modal.hidden));
+    await page.evaluate(() => {
+      localStorage.removeItem("handy-welcome-dismissed");
+      localStorage.removeItem("handy-welcome-skipped");
+    });
+    await page.reload({ waitUntil: "networkidle" });
+    await page.waitForSelector("#welcomeModal:not([hidden])");
     await page.click("#welcomeNext");
     assert(await page.locator("[data-welcome-step='1']").isVisible());
     await page.click("#welcomeBack");
@@ -112,6 +124,7 @@ async function run() {
     await page.click("#welcomeNext");
     assert(await page.locator("#welcomeModal").evaluate((modal) => modal.hidden));
     assert.strictEqual(await page.evaluate(() => localStorage.getItem("handy-welcome-dismissed")), "true");
+    assert.strictEqual(await page.evaluate(() => localStorage.getItem("handy-welcome-skipped")), null);
     await page.keyboard.press("Control+Home");
     await page.evaluate(() => document.querySelector(".skip-link").focus());
     await page.keyboard.press("Enter");

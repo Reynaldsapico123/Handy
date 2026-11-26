@@ -3273,12 +3273,18 @@ clearUpdateHistoryButton.addEventListener("click", () => {
 const welcomeModal = document.querySelector("#welcomeModal");
 const welcomeBack = document.querySelector("#welcomeBack");
 const welcomeNext = document.querySelector("#welcomeNext");
+const welcomeSkip = document.querySelector("#welcomeSkip");
 const welcomeSteps = [...document.querySelectorAll("[data-welcome-step]")];
 const welcomeProgress = welcomeModal.querySelectorAll(".welcome-progress span");
 let welcomeStepIndex = 0;
 
-function dismissWelcome() {
+function dismissWelcome({ completed = false } = {}) {
   localStorage.setItem(welcomeDismissedKey, "true");
+  if (completed) {
+    localStorage.removeItem("handy-welcome-skipped");
+  } else {
+    localStorage.setItem("handy-welcome-skipped", "true");
+  }
   welcomeModal.hidden = true;
 }
 
@@ -3305,13 +3311,15 @@ welcomeNext.addEventListener("click", () => {
     welcomeStepIndex += 1;
     renderWelcomeStep();
   } else {
-    dismissWelcome();
+    dismissWelcome({ completed: true });
   }
 });
 
 welcomeModal.querySelectorAll("[data-close-welcome]").forEach((button) => {
-  button.addEventListener("click", dismissWelcome);
+  button.addEventListener("click", () => dismissWelcome());
 });
+
+welcomeSkip.addEventListener("click", () => dismissWelcome());
 
 window.addEventListener("load", () => {
   const directTool = new URL(window.location.href).searchParams.has("tool");

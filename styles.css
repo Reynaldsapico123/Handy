@@ -1930,6 +1930,24 @@ body.dark .update-notice { box-shadow: 0 12px 36px rgba(0, 0, 0, 0.38); }
   justify-content: space-between;
 }
 .welcome-header .section-kicker { margin: 0; }
+.welcome-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.welcome-skip {
+  min-height: 44px;
+  border: 0;
+  border-radius: 8px;
+  padding: 8px 10px;
+  color: var(--muted);
+  background: transparent;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.welcome-skip:hover { color: var(--text); background: var(--bg); }
 .welcome-progress {
   margin: 16px 0 8px;
   display: flex;
