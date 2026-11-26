@@ -1699,6 +1699,25 @@ footer {
   transition: 220ms ease;
 }
 .toast.show { opacity: 1; transform: translate(-50%, 0); }
+.toast.has-action {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  max-width: calc(100vw - 32px);
+  pointer-events: auto;
+}
+.toast-action {
+  flex: none;
+  padding: 6px 10px;
+  border: 0;
+  border-radius: 6px;
+  color: #242631;
+  background: white;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+.toast-action:focus-visible { outline: 2px solid white; outline-offset: 3px; }
 
 .update-notice {
   position: fixed;

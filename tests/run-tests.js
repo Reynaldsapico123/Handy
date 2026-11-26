@@ -792,6 +792,24 @@ async function run() {
           value: {
             controller: {},
             register: async () => ({ waiting: null, installing: null, addEventListener() {} }),
+            getRegistrations: async () => [
+              {
+                scope: `${location.origin}/`,
+                unregister: async () => {
+                  const key = "test-same-origin-unregisters";
+                  sessionStorage.setItem(key, String(Number(sessionStorage.getItem(key) || "0") + 1));
+                  return true;
+                }
+              },
+              {
+                scope: "https://unrelated.example/",
+                unregister: async () => {
+                  const key = "test-other-origin-unregisters";
+                  sessionStorage.setItem(key, String(Number(sessionStorage.getItem(key) || "0") + 1));
+                  return true;
+                }
+              }
+            ],
             addEventListener() {}
           }
         });
@@ -834,6 +852,59 @@ async function run() {
         await directPage.locator(`#${modalId} .modal-close`).click();
         await directPage.waitForFunction(() => !new URL(location.href).searchParams.has("tool"));
       }
+
+      await directPage.goto("http://127.0.0.1:4174/", { waitUntil: "networkidle" });
+      await directPage.evaluate(async () => {
+        localStorage.setItem("handy-theme", "dark");
+        await caches.open("handy-recovery-test");
+        await caches.open("unrelated-app-cache");
+      });
+      const calculatorCard = directPage.locator("#toolGrid .tool-card").filter({ hasText: "Calculator" });
+      await calculatorCard.locator(".card-arrow").click();
+      await directPage.waitForSelector("#calculatorModal:not([hidden])");
+      await directPage.locator("#calculatorModal .modal-close").click();
+      await directPage.evaluate(() => { delete window.openCalculator; });
+      await calculatorCard.locator(".card-arrow").click();
+      await directPage.waitForURL(/recovered=development/);
+      await directPage.waitForLoadState("networkidle");
+      const recoveryState = await directPage.evaluate(async () => ({
+        theme: localStorage.getItem("handy-theme"),
+        recoveryBuild: sessionStorage.getItem("handy-open-recovery"),
+        sameOriginUnregisters: sessionStorage.getItem("test-same-origin-unregisters"),
+        otherOriginUnregisters: sessionStorage.getItem("test-other-origin-unregisters"),
+        cacheNames: await caches.keys()
+      }));
+      assert.strictEqual(recoveryState.theme, "dark");
+      assert.strictEqual(recoveryState.recoveryBuild, "development");
+      assert.strictEqual(recoveryState.sameOriginUnregisters, "1");
+      assert.strictEqual(recoveryState.otherOriginUnregisters, null);
+      assert(!recoveryState.cacheNames.includes("handy-recovery-test"));
+      assert(recoveryState.cacheNames.includes("unrelated-app-cache"));
+
+      await directPage.goto("http://127.0.0.1:4174/", { waitUntil: "networkidle" });
+      await calculatorCard.locator(".card-arrow").click();
+      await directPage.waitForSelector("#calculatorModal:not([hidden])");
+      await directPage.locator("#calculatorModal .modal-close").click();
+      await directPage.evaluate(() => {
+        sessionStorage.removeItem("handy-open-recovery");
+        delete window.openCalculator;
+        Object.defineProperty(navigator, "serviceWorker", {
+          configurable: true,
+          value: {
+            getRegistrations: async () => { throw new Error("Simulated recovery failure."); }
+          }
+        });
+      });
+      await calculatorCard.locator(".card-arrow").click();
+      await directPage.waitForFunction(() =>
+        document.querySelector("#toast .toast-action")?.textContent === "Reload"
+      );
+      assert.strictEqual(new URL(directPage.url()).searchParams.get("tool"), "calculator");
+      const recoveryRetryNavigation = directPage.waitForNavigation({ waitUntil: "networkidle" });
+      await directPage.locator("#toast .toast-action").click();
+      await recoveryRetryNavigation;
+      await directPage.waitForSelector("#calculatorModal:not([hidden])");
+      assert.strictEqual(new URL(directPage.url()).searchParams.get("tool"), "calculator");
 
       await directPage.goto("http://127.0.0.1:4174/?tool=unknown", { waitUntil: "networkidle" });
       await directPage.waitForFunction(() => !new URL(location.href).searchParams.has("tool"));

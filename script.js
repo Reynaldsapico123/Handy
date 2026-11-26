@@ -224,6 +224,20 @@ function observeToolModal(toolId) {
   }).observe(modal, { attributes: true, attributeFilter: ["hidden"] });
 }
 
+function showRecoveryReload(recoveryKey, message) {
+  showToast(message, {
+    label: "Reload",
+    onClick: () => {
+      try {
+        sessionStorage.removeItem(recoveryKey);
+      } catch (error) {
+        console.error("Could not reset the Handy recovery state.", error);
+      }
+      window.location.reload();
+    }
+  });
+}
+
 async function openLinkedTool(toolId, mode, settings) {
   const tool = toolLinks[toolId];
   if (!tool) return false;
@@ -238,6 +252,7 @@ async function openLinkedTool(toolId, mode, settings) {
   if (typeof open !== "function") {
     console.error(`${tool.name} did not provide its open function.`);
     const recoveryKey = "handy-open-recovery";
+    updateToolUrl(toolId, mode);
     let recoveredForBuild = null;
     try {
       recoveredForBuild = sessionStorage.getItem(recoveryKey);
@@ -264,10 +279,10 @@ async function openLinkedTool(toolId, mode, settings) {
         location.replace(url);
       } catch (error) {
         console.error("Could not recover the stale Handy app.", error);
-        showToast("Please reload the page to restore this tool.");
+        showRecoveryReload(recoveryKey, "Handy could not restore this tool. Try reloading.");
       }
     } else {
-      showToast("This tool could not start. Reload Handy or clear site data.");
+      showRecoveryReload(recoveryKey, "This tool still could not start. Try reloading Handy.");
     }
     return false;
   }
@@ -1167,11 +1182,23 @@ document.addEventListener("click", (event) => {
 });
 
 let toastTimer;
-function showToast(message) {
-  toast.textContent = message;
+function showToast(message, action) {
+  toast.replaceChildren();
+  const text = document.createElement("span");
+  text.textContent = message;
+  toast.append(text);
+  if (action) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "toast-action";
+    button.textContent = action.label;
+    button.addEventListener("click", action.onClick, { once: true });
+    toast.append(button);
+  }
+  toast.classList.toggle("has-action", Boolean(action));
   toast.classList.add("show");
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => toast.classList.remove("show"), 2200);
+  toastTimer = setTimeout(() => toast.classList.remove("show"), action ? 10000 : 2200);
 }
 
 const travelKitForm = document.querySelector("#travelKitForm");
