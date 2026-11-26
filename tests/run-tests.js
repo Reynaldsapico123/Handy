@@ -252,6 +252,9 @@ async function run() {
     assert.match(await page.locator("#personalizationPresetStatus").textContent(), /Travel preset is active/);
     await page.click("#resetToolLayout");
     assert.strictEqual(await page.locator("#toolGrid .tool-card").first().locator("h3").textContent(), "Calculator");
+    await page.locator("#toast .toast-action").filter({ hasText: "Undo" }).click();
+    assert.match(await page.locator("#personalizationPresetStatus").textContent(), /Travel preset is active/);
+    assert.strictEqual(await page.locator("#toolGrid .tool-card:not([hidden])").count(), 4);
 
     await page.evaluate(() => {
       localStorage.setItem("handy-tool-usage", JSON.stringify({ Calculator: 3 }));
@@ -264,6 +267,22 @@ async function run() {
       localStorage.getItem("handy-tool-usage") === null
       && localStorage.getItem("handy-recent-searches") === null
       && localStorage.getItem("handy-recent-tools") === null
+    );
+    await page.locator("#toast .toast-action").filter({ hasText: "Undo" }).click();
+    await page.waitForFunction(() =>
+      localStorage.getItem("handy-tool-usage") === JSON.stringify({ Calculator: 3 })
+      && localStorage.getItem("handy-recent-searches") === JSON.stringify(["timer"])
+      && localStorage.getItem("handy-recent-tools") === JSON.stringify(["Calculator"])
+    );
+
+    await page.evaluate(() => {
+      localStorage.setItem("handy-recent-tools", JSON.stringify(["Calculator", "Timer & Stopwatch"]));
+    });
+    await page.click("#clearRecent");
+    await page.waitForFunction(() => localStorage.getItem("handy-recent-tools") === null);
+    await page.locator("#toast .toast-action").filter({ hasText: "Undo" }).click();
+    await page.waitForFunction(() =>
+      localStorage.getItem("handy-recent-tools") === JSON.stringify(["Calculator", "Timer & Stopwatch"])
     );
 
     const calculatorFavorite = page.getByRole("button", { name: "Favorite Calculator" });

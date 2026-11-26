@@ -720,11 +720,29 @@ function moveTool(name, offset) {
 }
 
 document.querySelector("#resetToolLayout").addEventListener("click", () => {
+  const previousToolLayout = {
+    order: [...toolLayout.order],
+    hidden: [...toolLayout.hidden]
+  };
+  const previousPreset = localStorage.getItem(personalizationPresetKey);
   toolLayout = { order: [...customizableToolNames], hidden: [] };
   localStorage.removeItem(personalizationPresetKey);
   saveToolLayout();
   updatePersonalizationPresetUi();
-  showToast("Tool layout reset.");
+  showToast("Tool layout reset.", {
+    label: "Undo",
+    onClick: () => {
+      toolLayout = {
+        order: [...previousToolLayout.order],
+        hidden: [...previousToolLayout.hidden]
+      };
+      if (previousPreset === null) localStorage.removeItem(personalizationPresetKey);
+      else localStorage.setItem(personalizationPresetKey, previousPreset);
+      saveToolLayout();
+      updatePersonalizationPresetUi();
+      showToast("Tool layout restored.");
+    }
+  });
 });
 
 document.querySelectorAll("[data-personalization-preset]").forEach((button) => {
@@ -797,21 +815,47 @@ function renderSavedTools() {
 }
 
 document.querySelector("#clearRecent").addEventListener("click", () => {
+  const previousRecentTools = localStorage.getItem(recentKey);
   localStorage.removeItem(recentKey);
   renderSavedTools();
-  showToast("Recent tools cleared");
+  showToast("Recent tools cleared.", {
+    label: "Undo",
+    onClick: () => {
+      if (previousRecentTools === null) localStorage.removeItem(recentKey);
+      else localStorage.setItem(recentKey, previousRecentTools);
+      renderSavedTools();
+      showToast("Recent tools restored.");
+    }
+  });
 });
 
 document.querySelector("#resetPersonalization").addEventListener("click", () => {
   if (!window.confirm("Reset smart shortcut usage and recent searches? Favorites and tool layout will stay unchanged.")) return;
   try {
+    const previousValues = new Map([
+      [toolUsageKey, localStorage.getItem(toolUsageKey)],
+      [recentSearchesKey, localStorage.getItem(recentSearchesKey)],
+      [recentKey, localStorage.getItem(recentKey)],
+      [personalizationPresetKey, localStorage.getItem(personalizationPresetKey)]
+    ]);
     localStorage.removeItem(toolUsageKey);
     localStorage.removeItem(recentSearchesKey);
     localStorage.removeItem(recentKey);
     localStorage.removeItem(personalizationPresetKey);
     renderSavedTools();
     closeSearchSuggestions();
-    showToast("Smart shortcut personalization reset.");
+    showToast("Smart shortcut personalization reset.", {
+      label: "Undo",
+      onClick: () => {
+        previousValues.forEach((value, key) => {
+          if (value === null) localStorage.removeItem(key);
+          else localStorage.setItem(key, value);
+        });
+        renderSavedTools();
+        updatePersonalizationPresetUi();
+        showToast("Smart shortcut personalization restored.");
+      }
+    });
   } catch (error) {
     console.error("Could not reset smart shortcut personalization.", error);
     showToast("Could not reset smart shortcuts.");
