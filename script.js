@@ -11,6 +11,9 @@ const searchNoResults = document.querySelector("#searchNoResults");
 const searchSuggestionStatus = document.querySelector("#searchSuggestionStatus");
 const connectionStatus = document.querySelector("#connectionStatus");
 const connectionStatusText = document.querySelector("#connectionStatusText");
+const offlineNotice = document.querySelector("#offlineNotice");
+const offlineNoticeText = document.querySelector("#offlineNoticeText");
+const dismissOfflineNotice = document.querySelector("#dismissOfflineNotice");
 const installAppContainer = document.querySelector("#installAppContainer");
 const installAppButton = document.querySelector("#installApp");
 const installAppInstructions = document.querySelector("#installAppInstructions");
@@ -119,10 +122,19 @@ function updateConnectionStatus() {
   connectionStatus.title = isOnline
     ? "Online. Live features can connect to their services."
     : "Offline. Saved tools work; currency exchange uses reference rates.";
+  if (isOnline) {
+    offlineNotice.hidden = true;
+  } else {
+    offlineNotice.hidden = false;
+    offlineNoticeText.textContent = "You're offline. Calculator, QR, guides, and saved tools remain available.";
+  }
 }
 
 window.addEventListener("online", updateConnectionStatus);
 window.addEventListener("offline", updateConnectionStatus);
+dismissOfflineNotice.addEventListener("click", () => {
+  offlineNotice.hidden = true;
+});
 updateConnectionStatus();
 
 function updateToolUrl(toolId, mode) {

@@ -720,6 +720,11 @@ async function run() {
       await offlineContext.setOffline(true);
       await offlinePage.reload({ waitUntil: "domcontentloaded" });
       assert.strictEqual(await offlinePage.title(), "Handy — Everyday tools for everyone");
+      await offlinePage.waitForSelector("#offlineNotice:not([hidden])");
+      assert.match(await offlinePage.locator("#offlineNoticeText").textContent(), /You're offline/);
+      assert.strictEqual(await offlinePage.locator("#connectionStatusText").textContent(), "Offline");
+      await offlinePage.click("#dismissOfflineNotice");
+      assert(await offlinePage.locator("#offlineNotice").evaluate((notice) => notice.hidden));
       assert.strictEqual(remoteFontRequests.length, 0);
       assert.match(
         await offlinePage.locator("body").evaluate((body) => getComputedStyle(body).fontFamily),
@@ -751,6 +756,17 @@ async function run() {
       await offlinePage.locator("#toolGrid").getByRole("button", { name: "Open Calculator" }).click();
       await offlinePage.waitForSelector("#calculatorModal:not([hidden])");
       await offlinePage.keyboard.press("Escape");
+      const offlineTools = [
+        ["Open Unit Converter", "#unitConverterModal"],
+        ["Open Timer and Stopwatch", "#timerModal"],
+        ["Open World Clock", "#worldClockModal"],
+        ["Open QR Code Maker", "#qrModal"]
+      ];
+      for (const [buttonName, modalSelector] of offlineTools) {
+        await offlinePage.locator("#toolGrid").getByRole("button", { name: buttonName }).click();
+        await offlinePage.waitForSelector(`${modalSelector}:not([hidden])`);
+        await offlinePage.keyboard.press("Escape");
+      }
       await offlinePage.locator("#toolGrid").getByRole("button", { name: "Open Currency Exchange" }).click();
       await offlinePage.waitForSelector("#currencyModal:not([hidden])");
       await offlinePage.waitForFunction(() =>
@@ -776,6 +792,10 @@ async function run() {
         document.querySelector("#qrScanText").textContent === "https://offline-scan-test.example"
       );
       await offlineContext.setOffline(false);
+      await offlinePage.waitForFunction(() =>
+        document.querySelector("#connectionStatusText").textContent === "Online"
+      );
+      assert(await offlinePage.locator("#offlineNotice").evaluate((notice) => notice.hidden));
     } finally {
       await offlineContext.close();
     }
