@@ -135,10 +135,23 @@ async function initializeCurrency() {
     }).format(date);
   }
 
+  function formatRateAge(value) {
+    const timestamp = Date.parse(value);
+    if (!Number.isFinite(timestamp)) return "age unknown";
+    const elapsedMinutes = Math.max(0, Math.floor((Date.now() - timestamp) / 60000));
+    if (elapsedMinutes < 1) return "updated just now";
+    if (elapsedMinutes < 60) return `updated ${elapsedMinutes}m ago`;
+    const elapsedHours = Math.floor(elapsedMinutes / 60);
+    if (elapsedHours < 24) return `updated ${elapsedHours}h ago`;
+    const elapsedDays = Math.floor(elapsedHours / 24);
+    return `updated ${elapsedDays}d ago`;
+  }
+
   function showAvailableRatesStatus(prefix) {
     const source = liveRatesPersisted ? "saved rates" : "previously loaded rates";
     const updated = liveRatesUpdatedAt ? ` · Updated ${formatUpdatedAt(liveRatesUpdatedAt)}` : "";
-    status.textContent = `${prefix} · Using ${source}${updated}`;
+    const age = liveRatesUpdatedAt ? ` · ${formatRateAge(liveRatesUpdatedAt)}` : "";
+    status.textContent = `${prefix} · Using ${source}${updated}${age}`;
   }
 
   if (savedLiveRates) {
@@ -277,8 +290,14 @@ async function initializeCurrency() {
   to.addEventListener("change", convert);
   document.querySelector("#currencySwap").addEventListener("click", () => {
     const previousFrom = from.value;
+    const previousTo = to.value;
     from.value = to.value;
     to.value = previousFrom;
+    const numericAmount = Number(amount.value);
+    if (Number.isFinite(numericAmount) && numericAmount >= 0) {
+      const convertedAmount = numericAmount / rates[previousFrom] * rates[previousTo];
+      if (Number.isFinite(convertedAmount)) amount.value = String(Number.parseFloat(convertedAmount.toPrecision(12)));
+    }
     convert();
   });
   modal.querySelectorAll("[data-close-currency]").forEach((element) => {

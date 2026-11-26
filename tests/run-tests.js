@@ -453,6 +453,13 @@ async function run() {
     assert(await page.locator("#currencyCopyResult").isDisabled());
     await page.fill("#currencyAmount", "100");
     await page.waitForFunction(() => !document.querySelector("#currencyCopyResult").disabled);
+    await page.click("#currencySwap");
+    assert.strictEqual(await page.locator("#currencyFrom").inputValue(), "EUR");
+    assert.strictEqual(await page.locator("#currencyTo").inputValue(), "USD");
+    assert.strictEqual(await page.locator("#currencyAmount").inputValue(), "90");
+    assert.strictEqual(await page.locator("#currencyResult").textContent(), "100");
+    await page.click("#currencySwap");
+    assert.strictEqual(await page.locator("#currencyAmount").inputValue(), "100");
     await page.click("#currencyCopyResult");
     await page.waitForFunction(() => window.copiedCurrencyConversion === "100 USD = 90 EUR");
     await page.getByText("Conversion copied.").waitFor();
