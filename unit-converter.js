@@ -10,6 +10,7 @@ async function initializeUnitConverter() {
   const to = document.querySelector("#unitTo");
   const fromValue = document.querySelector("#unitFromValue");
   const toValue = document.querySelector("#unitToValue");
+  const copyValue = document.querySelector("#unitCopy");
   const savedUnit = JSON.parse(localStorage.getItem("handy-unit-converter") || "null");
 
   const units = {
@@ -55,6 +56,7 @@ async function initializeUnitConverter() {
 
   function convert() {
     const value = Number(fromValue.value);
+    copyValue.disabled = true;
     if (!Number.isFinite(value)) {
       toValue.value = "";
       return;
@@ -71,7 +73,12 @@ async function initializeUnitConverter() {
       result = value * units[category.value][from.value].factor /
         units[category.value][to.value].factor;
     }
+    if (!Number.isFinite(result)) {
+      toValue.value = "Result is too large";
+      return;
+    }
     toValue.value = Number(result.toPrecision(12)).toLocaleString();
+    copyValue.disabled = false;
     localStorage.setItem("handy-unit-converter", JSON.stringify({
       category: category.value,
       from: from.value,
@@ -115,7 +122,20 @@ async function initializeUnitConverter() {
     const fromUnit = from.value;
     from.value = to.value;
     to.value = fromUnit;
+    if (!copyValue.disabled && toValue.value) {
+      const convertedValue = toValue.value.replace(/,/g, "");
+      if (Number.isFinite(Number(convertedValue))) fromValue.value = convertedValue;
+    }
     convert();
+  });
+  copyValue.addEventListener("click", async () => {
+    if (copyValue.disabled) return;
+    try {
+      await navigator.clipboard.writeText(toValue.value);
+      showToast("Converted value copied.");
+    } catch {
+      showToast("Clipboard is unavailable in this browser");
+    }
   });
   document.addEventListener("keydown", (event) => {
     if (!modal.hidden && event.key === "Escape") close();

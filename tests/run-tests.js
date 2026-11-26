@@ -373,6 +373,23 @@ async function run() {
 
     await page.getByRole("button", { name: "Open Unit Converter" }).click();
     await page.waitForSelector("#unitConverterModal:not([hidden])");
+    await page.selectOption("#unitCategory", "length");
+    await page.selectOption("#unitFrom", "kilometer");
+    await page.selectOption("#unitTo", "mile");
+    await page.fill("#unitFromValue", "100");
+    assert.strictEqual(await page.locator("#unitToValue").inputValue(), "62.137");
+    await page.click("#unitCopy");
+    await page.waitForFunction(() => window.copiedToolLink === "62.137");
+    await page.click("#unitSwap");
+    assert.strictEqual(await page.locator("#unitFrom").inputValue(), "mile");
+    assert.strictEqual(await page.locator("#unitTo").inputValue(), "kilometer");
+    assert.strictEqual(await page.locator("#unitFromValue").inputValue(), "62.137");
+    await page.selectOption("#unitCategory", "area");
+    await page.selectOption("#unitFrom", "squareKilometer");
+    await page.selectOption("#unitTo", "squareFoot");
+    await page.fill("#unitFromValue", "1e308");
+    assert.strictEqual(await page.locator("#unitToValue").inputValue(), "Result is too large");
+    assert(await page.locator("#unitCopy").isDisabled());
     await page.keyboard.press("Escape");
 
     await page.getByRole("button", { name: "Open Timer and Stopwatch" }).click();
