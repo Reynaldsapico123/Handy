@@ -1922,7 +1922,17 @@ function renderTravelChecklist() {
       ));
     });
     remove.addEventListener("click", () => {
-      persistActiveChecklist(checklist.filter((entry) => entry.id !== item.id));
+      const removedIndex = checklist.findIndex((entry) => entry.id === item.id);
+      if (!persistActiveChecklist(checklist.filter((entry) => entry.id !== item.id))) return;
+      showToast(`Removed "${item.text}".`, {
+        label: "Undo",
+        onClick: () => {
+          const restored = [...getActiveChecklist()];
+          restored.splice(Math.max(0, removedIndex), 0, item);
+          persistActiveChecklist(restored);
+          showToast("Checklist item restored.");
+        }
+      });
     });
     listItem.append(checkbox, label, remove);
     travelChecklistList.append(listItem);
@@ -2204,9 +2214,20 @@ function renderTravelItinerary() {
     remove.className = "travel-timeline-remove";
     remove.setAttribute("aria-label", `Remove ${event.title}`);
     remove.textContent = "×";
-    remove.addEventListener("click", () =>
-      persistActiveItinerary(getActiveItinerary().filter((entry) => entry.id !== event.id))
-    );
+    remove.addEventListener("click", () => {
+      const itinerary = getActiveItinerary();
+      const removedIndex = itinerary.findIndex((entry) => entry.id === event.id);
+      if (!persistActiveItinerary(itinerary.filter((entry) => entry.id !== event.id))) return;
+      showToast(`Removed "${event.title}".`, {
+        label: "Undo",
+        onClick: () => {
+          const restored = [...getActiveItinerary()];
+          restored.splice(Math.max(0, removedIndex), 0, event);
+          persistActiveItinerary(restored);
+          showToast("Timeline event restored.");
+        }
+      });
+    });
     actions.append(calendarButton, remove);
     item.append(copy, actions);
     travelTimeline.append(item);
@@ -2397,12 +2418,23 @@ function renderTravelBudget() {
     remove.className = "travel-expense-remove";
     remove.setAttribute("aria-label", `Remove ${expense.title}`);
     remove.textContent = "×";
-    remove.addEventListener("click", () =>
-      persistActiveBudget({
+    remove.addEventListener("click", () => {
+      const removedIndex = budget.expenses.findIndex((entry) => entry.id === expense.id);
+      if (!persistActiveBudget({
         ...budget,
         expenses: budget.expenses.filter((entry) => entry.id !== expense.id)
-      })
-    );
+      })) return;
+      showToast(`Removed "${expense.title}".`, {
+        label: "Undo",
+        onClick: () => {
+          const restoredBudget = getActiveBudget();
+          const restoredExpenses = [...restoredBudget.expenses];
+          restoredExpenses.splice(Math.max(0, removedIndex), 0, expense);
+          persistActiveBudget({ ...restoredBudget, expenses: restoredExpenses });
+          showToast("Expense restored.");
+        }
+      });
+    });
     item.append(copy, amount, remove);
     travelExpenseList.append(item);
   });
@@ -2616,7 +2648,15 @@ resetTravelChecklistButton.addEventListener("click", () => {
   const checklist = getActiveChecklist();
   if (!checklist.length) return;
   if (!window.confirm("Reset all checklist items to incomplete?")) return;
-  persistActiveChecklist(checklist.map((item) => ({ ...item, done: false })));
+  const resetChecklist = checklist.map((item) => ({ ...item, done: false }));
+  if (!persistActiveChecklist(resetChecklist)) return;
+  showToast("Checklist reset.", {
+    label: "Undo",
+    onClick: () => {
+      persistActiveChecklist(checklist);
+      showToast("Checklist restored.");
+    }
+  });
 });
 deleteTravelKitButton.addEventListener("click", () => {
   const activeTrip = getActiveTravelKit();
@@ -2625,11 +2665,23 @@ deleteTravelKitButton.addEventListener("click", () => {
     ? `Delete "${activeTrip.name}" and discard your unsaved changes?`
     : `Delete "${activeTrip.name}"?`;
   if (!window.confirm(message)) return;
+  const deletedIndex = travelKitStore.trips.findIndex((trip) => trip.id === activeTrip.id);
   const trips = travelKitStore.trips.filter((trip) => trip.id !== activeTrip.id);
   const nextId = trips[0]?.id || null;
   if (!persistTravelKitStore({ activeId: nextId, trips })) return;
   showTravelKit(nextId);
   travelKitStatus.textContent = `Deleted "${activeTrip.name}".`;
+  showToast(`Deleted "${activeTrip.name}".`, {
+    label: "Undo",
+    onClick: () => {
+      const restoredTrips = [...travelKitStore.trips];
+      restoredTrips.splice(Math.max(0, deletedIndex), 0, activeTrip);
+      if (!persistTravelKitStore({ activeId: activeTrip.id, trips: restoredTrips })) return;
+      showTravelKit(activeTrip.id);
+      travelKitStatus.textContent = `Restored "${activeTrip.name}".`;
+      showToast("Travel Kit restored.");
+    }
+  });
 });
 
 travelKitActionButtons.forEach((button) => {

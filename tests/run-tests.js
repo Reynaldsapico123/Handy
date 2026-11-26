@@ -1052,6 +1052,8 @@ async function run() {
       directPage.once("dialog", (dialog) => dialog.accept());
       await directPage.click("#resetTravelChecklist");
       assert.match(await directPage.locator("#travelChecklistProgress").textContent(), /0 of 6 complete/);
+      await directPage.locator("#toast .toast-action").filter({ hasText: "Undo" }).click();
+      assert.match(await directPage.locator("#travelChecklistProgress").textContent(), /1 of 6 complete/);
       await directPage.locator("#travelChecklistList .travel-checklist-item").first().locator("input").check();
       await directPage.fill("#travelEventTitle", "Flight to Tokyo");
       await directPage.fill("#travelEventDateTime", "2026-12-10T09:30");
@@ -1192,6 +1194,13 @@ async function run() {
       );
       assert.strictEqual(afterDelete.trips.length, 2);
       assert(afterDelete.trips.some((trip) => trip.id === tokyoId));
+      await directPage.locator("#toast .toast-action").filter({ hasText: "Undo" }).click();
+      const afterUndo = await directPage.evaluate(() =>
+        JSON.parse(localStorage.getItem("handy-travel-kit"))
+      );
+      assert.strictEqual(afterUndo.trips.length, 3);
+      assert(afterUndo.trips.some((trip) => trip.id === parisId));
+      assert.strictEqual(afterUndo.activeId, parisId);
 
       await directPage.evaluate(() => localStorage.setItem("handy-travel-kit", JSON.stringify({
         name: "Legacy trip",
