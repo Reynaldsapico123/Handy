@@ -17,6 +17,7 @@ async function initializeQrCode() {
   const scanText = document.querySelector("#qrScanText");
   const scanCanvas = document.querySelector("#qrScanCanvas");
   const scanRetry = document.querySelector("#qrScanRetry");
+  const scanOpen = document.querySelector("#qrScanOpen");
   const imageInput = document.querySelector("#qrImageInput");
   const scanContext = scanCanvas.getContext("2d", { willReadFrequently: true });
   const cameraFrameElement = document.querySelector("#qrCameraFrame");
@@ -137,6 +138,18 @@ async function initializeQrCode() {
 
   function displayScanResult(value) {
     scanText.textContent = value;
+    try {
+      sessionStorage.setItem("handy-last-qr-result", value);
+    } catch (error) {
+      console.error("Could not remember the last QR result.", error);
+    }
+    let safeUrl = null;
+    try {
+      const parsed = new URL(value);
+      if (parsed.protocol === "http:" || parsed.protocol === "https:") safeUrl = parsed.toString();
+    } catch {}
+    scanOpen.hidden = !safeUrl;
+    scanOpen.dataset.openUrl = safeUrl || "";
     scanResult.hidden = false;
     showScanStatus("QR code scanned successfully.");
     stopCamera();
@@ -344,6 +357,12 @@ async function initializeQrCode() {
     } catch {
       showToast("Clipboard is unavailable in this browser");
     }
+  });
+
+  scanOpen.addEventListener("click", () => {
+    const url = scanOpen.dataset.openUrl;
+    if (!url) return;
+    window.open(url, "_blank", "noopener,noreferrer");
   });
 
   window.openQrCode = function (mode = "create", preset) {

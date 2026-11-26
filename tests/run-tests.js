@@ -527,6 +527,16 @@ async function run() {
     });
     await page.waitForFunction(() => document.querySelector("#qrScanText").textContent === "https://scan-test.example");
     assert.strictEqual(await page.locator("#qrScanStatus").textContent(), "QR code scanned successfully.");
+    assert(await page.locator("#qrScanOpen").isVisible());
+    assert.strictEqual(await page.evaluate(() => sessionStorage.getItem("handy-last-qr-result")), "https://scan-test.example");
+    await page.evaluate(() => {
+      window.openedQrUrl = null;
+      window.open = (url) => { window.openedQrUrl = url; };
+    });
+    await page.click("#qrScanOpen");
+    assert.strictEqual(await page.evaluate(() => window.openedQrUrl), "https://scan-test.example/");
+    await page.click("#qrScanCopy");
+    await page.waitForFunction(() => window.copiedToolLink === "https://scan-test.example");
     await page.evaluate(() => {
       window.requestedCameraModes = [];
       window.requestedTorchValues = [];
