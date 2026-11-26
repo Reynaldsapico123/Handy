@@ -573,6 +573,7 @@ async function run() {
 
     await page.keyboard.press("Control+K");
     await page.waitForSelector("#commandPalette:not([hidden])");
+    assert(await page.locator(".command-palette-shortcuts").isVisible());
     await page.fill("#commandPaletteInput", "timer");
     assert.strictEqual(await page.locator("#commandPaletteList [role='option']").count(), 1);
     await page.keyboard.press("Escape");
@@ -598,6 +599,10 @@ async function run() {
       document.querySelector("#updateNotice").hidden = true;
     });
     await page.locator("#privacyPanel summary").scrollIntoViewIfNeeded();
+    await page.locator("#keyboardShortcuts summary").click();
+    assert(await page.locator("#keyboardShortcuts").evaluate((details) => details.open));
+    assert.match(await page.locator("#keyboardShortcuts").textContent(), /Ctrl/);
+    assert.match(await page.locator("#keyboardShortcuts").textContent(), /Esc/);
     await page.evaluate(() => {
       document.querySelector("#updateNotice").hidden = true;
       document.querySelector("#privacyPanel").open = true;

@@ -716,6 +716,32 @@ body.dark .offline-notice button {
 }
 .backup-actions button:hover { border-color: var(--accent); color: var(--accent-text); }
 .backup-settings .backup-status { min-height: 1em; margin-bottom: 0; }
+.keyboard-shortcuts {
+  margin-top: 12px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+.keyboard-shortcuts summary {
+  width: fit-content;
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.keyboard-shortcuts dl {
+  display: grid;
+  gap: 8px;
+  margin: 12px 0 0;
+}
+.keyboard-shortcuts dl div {
+  display: grid;
+  grid-template-columns: minmax(150px, 0.8fr) 1.2fr;
+  align-items: center;
+  gap: 12px;
+}
+.keyboard-shortcuts dt,
+.keyboard-shortcuts dd { margin: 0; }
+.keyboard-shortcuts dd { color: var(--muted); font-size: 13px; }
 body.dark .saved-tool-icon { background: #302e43; }
 .travel-kit-section {
   width: min(1120px, calc(100% - 48px));
@@ -1899,6 +1925,24 @@ body.dark .update-notice { box-shadow: 0 12px 36px rgba(0, 0, 0, 0.38); }
 .command-palette-action-copy strong { font-size: 14px; }
 .command-palette-action-copy span { margin-top: 2px; color: var(--muted); font-size: 12px; }
 .command-palette-action-key { color: var(--muted); font-size: 11px; }
+.command-palette-shortcuts {
+  margin: 10px 2px 0;
+  color: var(--muted);
+  font-size: 12px;
+  text-align: center;
+}
+kbd {
+  min-width: 24px;
+  display: inline-block;
+  padding: 3px 6px;
+  border: 1px solid var(--line);
+  border-bottom-width: 2px;
+  border-radius: 6px;
+  color: var(--text);
+  background: var(--bg);
+  font: 700 11px/1.2 inherit;
+  text-align: center;
+}
 
 .welcome-modal {
   position: fixed;

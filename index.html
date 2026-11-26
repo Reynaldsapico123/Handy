@@ -510,6 +510,15 @@
         </div>
         <p class="backup-status" id="backupStatus" role="status" aria-live="polite"></p>
       </details>
+      <details class="keyboard-shortcuts" id="keyboardShortcuts">
+        <summary>Keyboard shortcuts</summary>
+        <dl>
+          <div><dt><kbd>/</kbd></dt><dd>Open the command palette when not typing</dd></div>
+          <div><dt><kbd>Ctrl</kbd> / <kbd>⌘</kbd> + <kbd>K</kbd></dt><dd>Open the command palette</dd></div>
+          <div><dt><kbd>Esc</kbd></dt><dd>Close the current menu or dialog</dd></div>
+          <div><dt><kbd>↑</kbd> <kbd>↓</kbd></dt><dd>Move through search and command options</dd></div>
+        </dl>
+      </details>
     </section>
 
     <section class="learn-section" id="learn">
@@ -655,6 +664,7 @@
       <label class="sr-only" for="commandPaletteInput">Search Handy actions</label>
       <input id="commandPaletteInput" class="command-palette-input" type="search" placeholder="Search tools and actions…" autocomplete="off">
       <div id="commandPaletteList" class="command-palette-list" role="listbox" aria-label="Handy actions"></div>
+      <p class="command-palette-shortcuts"><kbd>↑</kbd> <kbd>↓</kbd> navigate · <kbd>Enter</kbd> open · <kbd>Esc</kbd> close</p>
     </section>
   </div>
   <div class="welcome-modal modal" id="welcomeModal" role="dialog" aria-modal="true" aria-labelledby="welcomeTitle" hidden>
