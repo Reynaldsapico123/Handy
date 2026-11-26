@@ -906,6 +906,33 @@ async function run() {
       await directPage.waitForSelector("#calculatorModal:not([hidden])");
       assert.strictEqual(new URL(directPage.url()).searchParams.get("tool"), "calculator");
 
+      await directPage.goto("http://127.0.0.1:4174/?tool=qr&mode=scan", { waitUntil: "networkidle" });
+      await directPage.waitForSelector("#qrModal:not([hidden])");
+      assert.strictEqual(await directPage.locator("#qrScanTab").getAttribute("aria-selected"), "true");
+      await directPage.locator("#qrModal .modal-close").click();
+      await directPage.evaluate(() => {
+        sessionStorage.removeItem("handy-open-recovery");
+        delete window.openQrCode;
+        Object.defineProperty(navigator, "serviceWorker", {
+          configurable: true,
+          value: {
+            getRegistrations: async () => { throw new Error("Simulated recovery failure."); }
+          }
+        });
+      });
+      await directPage.click("#qrScanShortcut");
+      await directPage.waitForFunction(() =>
+        document.querySelector("#toast .toast-action")?.textContent === "Reload"
+      );
+      assert.strictEqual(new URL(directPage.url()).searchParams.get("tool"), "qr");
+      assert.strictEqual(new URL(directPage.url()).searchParams.get("mode"), "scan");
+      const qrRecoveryNavigation = directPage.waitForNavigation({ waitUntil: "networkidle" });
+      await directPage.locator("#toast .toast-action").click();
+      await qrRecoveryNavigation;
+      await directPage.waitForSelector("#qrModal:not([hidden])");
+      assert.strictEqual(await directPage.locator("#qrScanTab").getAttribute("aria-selected"), "true");
+      assert.strictEqual(new URL(directPage.url()).searchParams.get("mode"), "scan");
+
       await directPage.goto("http://127.0.0.1:4174/?tool=unknown", { waitUntil: "networkidle" });
       await directPage.waitForFunction(() => !new URL(location.href).searchParams.has("tool"));
       assert.strictEqual(await directPage.locator(".tool-modal:not([hidden])").count(), 0);
