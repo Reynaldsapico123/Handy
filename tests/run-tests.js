@@ -913,6 +913,13 @@ async function run() {
     await page.emulateMedia({ reducedMotion: "no-preference" });
     assert(await page.locator(".mobile-bottom-nav").isVisible());
     assert.strictEqual(await page.locator(".mobile-bottom-nav a, .mobile-bottom-nav button").count(), 3);
+    await page.locator("#toolCustomizer summary").click();
+    await page.selectOption("#mobileQuickAction1", "home");
+    await page.selectOption("#mobileQuickAction2", "scan");
+    await page.selectOption("#mobileQuickAction3", "calculator");
+    await page.waitForSelector('[data-mobile-action="calculator"]');
+    assert.strictEqual(await page.locator(".mobile-bottom-nav button, .mobile-bottom-nav a").count(), 3);
+    assert.strictEqual(await page.locator('[data-mobile-action="calculator"]').count(), 1);
     assert.strictEqual(await page.evaluate(() => getComputedStyle(document.documentElement).width), "390px");
     assert(await page.evaluate(() => {
       const navButton = document.querySelector("#menuToggle");

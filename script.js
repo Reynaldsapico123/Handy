@@ -35,6 +35,7 @@ const toolLayoutKey = "handy-tool-layout";
 const toolUsageKey = "handy-tool-usage";
 const recentSearchesKey = "handy-recent-searches";
 const personalizationPresetKey = "handy-personalization-preset";
+const mobileQuickActionsKey = "handy-mobile-quick-actions";
 const feedbackDraftKey = "handy-feedback-draft";
 const backupFormat = "handy-settings-backup";
 const travelKitStorageKey = "handy-travel-kit";
@@ -44,6 +45,7 @@ const backupKeys = [
   toolLayoutKey,
   toolUsageKey,
   personalizationPresetKey,
+  mobileQuickActionsKey,
   travelKitStorageKey,
   "handy-theme",
   "handy-currency-pair",
@@ -771,41 +773,120 @@ renderToolCustomizer();
 
 const savedToolsGrid = document.querySelector("#savedToolsGrid");
 
-function renderMobileFavoriteNav(favorites, recent, usage) {
-  const favoriteButton = document.querySelector('[data-mobile-nav="favorite"]');
-  const favoriteLabel = document.querySelector("#mobileFavoriteNavLabel");
-  if (!favoriteButton || !favoriteLabel) return;
+const defaultMobileQuickActions = ["home", "scan", "favorite"];
+const mobileQuickActionIds = new Set([
+  "home", "tools", "saved", "scan", "calculator", "timer",
+  "world-clock", "currency", "unit-converter", "favorite"
+]);
 
-  let rankedName = favorites[0];
-  if (!rankedName) {
-    const ranked = Object.entries(usage)
-      .filter(([name, count]) => toolLayoutKeySet.has(name) && Number.isInteger(count) && count > 0)
-      .sort(([, countA], [, countB]) => countB - countA);
-    rankedName = ranked[0]?.[0] || recent[0] || "Calculator";
+function readMobileQuickActions() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(mobileQuickActionsKey));
+    if (!Array.isArray(saved)) return [...defaultMobileQuickActions];
+    const valid = [...new Set(saved.filter((action) => mobileQuickActionIds.has(action)))];
+    return valid.length ? valid.slice(0, 3) : [...defaultMobileQuickActions];
+  } catch {
+    return [...defaultMobileQuickActions];
   }
-  favoriteLabel.textContent = rankedName === "Timer & Stopwatch"
-    ? "Timer"
-    : rankedName === "World Clock"
-      ? "Clock"
-      : rankedName === "Unit Converter"
-        ? "Convert"
-        : rankedName === "Currency Exchange"
-          ? "Currency"
-          : rankedName.replace(" Code Maker", "");
-  favoriteButton.dataset.favoriteTool = rankedName;
 }
 
-document.querySelector('[data-mobile-nav="scan"]')?.addEventListener("click", () => {
-  saveRecentTool("QR Code Maker");
-  recordToolUsage("QR Code Maker");
-  openLinkedTool("qr", "scan");
+function saveMobileQuickActions(actions) {
+  const unique = [...new Set(actions.filter((action) => mobileQuickActionIds.has(action)))].slice(0, 3);
+  if (!unique.length) return;
+  localStorage.setItem(mobileQuickActionsKey, JSON.stringify(unique));
+  renderSavedTools();
+}
+
+function renderMobileFavoriteNav(favorites, recent, usage) {
+  const nav = document.querySelector(".mobile-bottom-nav");
+  if (!nav) return;
+  const actions = readMobileQuickActions();
+  const ranked = Object.entries(usage).filter(([n,c]) => toolLayoutKeySet.has(n) && c > 0).sort((a,b) => b[1]-a[1]);
+  const favorite = favorites[0] || ranked[0]?.[0] || recent[0] || "Calculator";
+  const labels = {
+    home:["Home","⌂","#"], tools:["Tools","▦","#tools"], saved:["Saved","★","#savedTools"],
+    scan:["Scan QR","▦"], calculator:["Calculator","±"], timer:["Timer","◴"],
+    "world-clock":["Clock","◷"], currency:["Currency","$"], "unit-converter":["Convert","⇄"],
+    favorite:[favorite.replace(" & Stopwatch","").replace(" Code Maker",""),"★"]
+  };
+  nav.innerHTML = actions.map((id) => {
+    const [label,icon,href] = labels[id] || ["",""];
+    return href
+      ? `<a href="${href}" aria-label="${label}"><span aria-hidden="true">${icon}</span><span>${label}</span></a>`
+      : `<button type="button" data-mobile-action="${id}" aria-label="${label}"><span aria-hidden="true">${icon}</span><span>${label}</span></button>`;
+  }).join("");
+}
+
+const mobileQuickActionSelects = [
+  document.querySelector("#mobileQuickAction1"),
+  document.querySelector("#mobileQuickAction2"),
+  document.querySelector("#mobileQuickAction3")
+];
+const mobileQuickActionsStatus = document.querySelector("#mobileQuickActionsStatus");
+const resetMobileQuickActions = document.querySelector("#resetMobileQuickActions");
+
+function syncMobileQuickActionEditor() {
+  const actions = readMobileQuickActions();
+  const choices = [
+    ["home","Home"],["tools","Tools"],["saved","Saved tools"],["scan","Scan QR"],["calculator","Calculator"],
+    ["timer","Timer"],["world-clock","World Clock"],["currency","Currency"],["unit-converter","Unit Converter"],["favorite","Favorite tool"]
+  ];
+  mobileQuickActionSelects.forEach((select, index) => {
+    if (!select) return;
+    select.innerHTML = choices.map(([value, label]) =>
+      `<option value="${value}">${label}</option>`
+    ).join("");
+    select.value = actions[index] || defaultMobileQuickActions[index];
+  });
+}
+
+mobileQuickActionSelects.forEach((select) => {
+  select?.addEventListener("change", () => {
+    const actions = mobileQuickActionSelects.map((item) => item?.value).filter(Boolean);
+    saveMobileQuickActions(actions);
+  });
 });
 
-document.querySelector('[data-mobile-nav="favorite"]')?.addEventListener("click", (event) => {
-  const name = event.currentTarget.dataset.favoriteTool;
-  const card = toolCards.find((item) => item.querySelector("h3").textContent === name);
-  if (!card) return;
-  card.querySelector(".card-arrow")?.click();
+resetMobileQuickActions?.addEventListener("click", () => {
+  const previous = readMobileQuickActions();
+  saveMobileQuickActions([...defaultMobileQuickActions]);
+  syncMobileQuickActionEditor();
+  showToast("Mobile quick actions reset.", {
+    label: "Undo",
+    onClick: () => {
+      saveMobileQuickActions(previous);
+      syncMobileQuickActionEditor();
+      showToast("Mobile quick actions restored.");
+    }
+  });
+});
+
+syncMobileQuickActionEditor();
+
+document.querySelector(".mobile-bottom-nav")?.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-mobile-action]");
+  if (!button) return;
+  event.preventDefault();
+  const action = button.dataset.mobileAction;
+  if (action === "scan") {
+    saveRecentTool("QR Code Maker");
+    recordToolUsage("QR Code Maker");
+    openLinkedTool("qr", "scan");
+  } else if (action === "calculator") openLinkedTool("calculator");
+  else if (action === "timer") openLinkedTool("timer");
+  else if (action === "world-clock") openLinkedTool("world-clock");
+  else if (action === "currency") openLinkedTool("currency");
+  else if (action === "unit-converter") openLinkedTool("unit-converter");
+  else if (action === "favorite") {
+    const favorites = readStoredList(favoritesKey);
+    const name = favorites[0] || "Calculator";
+    const card = toolCards.find((item) => item.querySelector("h3").textContent === name);
+    card?.querySelector(".card-arrow")?.click();
+  } else if (action === "saved") {
+    document.querySelector("#savedTools")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  } else if (action === "tools") {
+    document.querySelector("#tools")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
 });
 
 function renderDashboardInsights() {
@@ -880,6 +961,8 @@ function renderSavedTools() {
       .filter((name) => Number.isFinite(usage[name]) && usage[name] > 0)
       .sort((a, b) => usage[b] - usage[a])
   ])];
+
+  renderMobileFavoriteNav(favorites, recent, usage);
 
   if (!names.length) {
     savedToolsGrid.innerHTML = '<div class="saved-tools-empty">Star a tool or open one to create your shortcuts.</div>';
@@ -3226,6 +3309,19 @@ function validateBackupData(data) {
         throw new Error("Backup personalization preset is invalid.");
       }
       validated[key] = value;
+    } else if (key === mobileQuickActionsKey) {
+      if (!Array.isArray(value) || value.length < 1 || value.length > 3) {
+        throw new Error("Backup mobile quick actions are invalid.");
+      }
+      const validActions = new Set([
+        "home", "tools", "saved", "scan", "calculator", "timer",
+        "world-clock", "currency", "unit-converter", "favorite"
+      ]);
+      if (value.some((action) => !validActions.has(action))
+        || new Set(value).size !== value.length) {
+        throw new Error("Backup mobile quick actions are invalid.");
+      }
+      validated[key] = [...value];
     } else if (key === "handy-currency-pair") {
       if (
         !isBackupRecord(value)

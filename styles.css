@@ -2287,6 +2287,7 @@ body.dark .connection-status[data-state="offline"] { color: #f3c27f; }
 
 @media (max-width: 640px) {
   body { padding-bottom: calc(68px + env(safe-area-inset-bottom, 0px)); }
+  .mobile-quick-action-fields { grid-template-columns: 1fr; }
   .header {
     height: calc(68px + env(safe-area-inset-top, 0px));
     padding-top: env(safe-area-inset-top, 0px);
