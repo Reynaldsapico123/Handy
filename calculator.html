@@ -19,6 +19,10 @@
         <h3 id="historyTitle">Recent calculations</h3>
         <button type="button" id="clearCalculatorHistory" class="history-clear">Clear</button>
       </div>
+      <label class="history-search" for="calculatorHistorySearch">
+        <span class="sr-only">Search calculation history</span>
+        <input id="calculatorHistorySearch" type="search" maxlength="80" placeholder="Search calculations" autocomplete="off">
+      </label>
       <div id="calculatorHistory" class="history-list" aria-live="polite"></div>
     </section>
 

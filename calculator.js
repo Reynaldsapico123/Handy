@@ -9,6 +9,7 @@ async function initializeCalculator() {
   const preview = document.querySelector("#calculationPreview");
   const grid = document.querySelector("#calculatorGrid");
   const historyList = document.querySelector("#calculatorHistory");
+  const historySearch = document.querySelector("#calculatorHistorySearch");
   const historyKey = "handy-calculator-history";
   let expression = "";
   let justCalculated = false;
@@ -27,6 +28,7 @@ async function initializeCalculator() {
 
   function renderHistory() {
     historyList.replaceChildren();
+    const query = historySearch.value.trim().toLowerCase();
     if (!history.length) {
       const empty = document.createElement("p");
       empty.className = "history-empty";
@@ -35,7 +37,23 @@ async function initializeCalculator() {
       return;
     }
 
-    history.forEach((item, index) => {
+    const visibleItems = history
+      .map((item, index) => ({ item, index }))
+      .filter(({ item }) =>
+        !query
+        || item.expression.toLowerCase().includes(query)
+        || item.result.toLowerCase().includes(query)
+      );
+
+    if (!visibleItems.length) {
+      const empty = document.createElement("p");
+      empty.className = "history-empty";
+      empty.textContent = "No calculations match your search.";
+      historyList.appendChild(empty);
+      return;
+    }
+
+    visibleItems.forEach(({ item, index }) => {
       const row = document.createElement("div");
       row.className = "history-item";
 
@@ -57,7 +75,13 @@ async function initializeCalculator() {
       copy.textContent = "Copy";
       copy.setAttribute("aria-label", `Copy result ${item.result}`);
       copy.dataset.copyResult = item.result;
-      row.append(entry, copy);
+      const remove = document.createElement("button");
+      remove.type = "button";
+      remove.className = "history-remove";
+      remove.textContent = "Delete";
+      remove.setAttribute("aria-label", `Delete calculation ${item.expression}`);
+      remove.dataset.deleteHistoryIndex = index.toString();
+      row.append(entry, copy, remove);
       historyList.appendChild(row);
     });
   }
@@ -240,8 +264,30 @@ async function initializeCalculator() {
       justCalculated = true;
       preview.textContent = item.expression + " =";
       output.textContent = item.result;
+      return;
+    }
+
+    const deleteButton = event.target.closest("[data-delete-history-index]");
+    if (deleteButton) {
+      const index = Number(deleteButton.dataset.deleteHistoryIndex);
+      const removed = history[index];
+      if (!removed) return;
+      history.splice(index, 1);
+      localStorage.setItem(historyKey, JSON.stringify(history));
+      renderHistory();
+      showToast("Calculation deleted.", {
+        label: "Undo",
+        onClick: () => {
+          history.splice(Math.min(index, history.length), 0, removed);
+          localStorage.setItem(historyKey, JSON.stringify(history));
+          renderHistory();
+          showToast("Calculation restored.");
+        }
+      });
     }
   });
+
+  historySearch.addEventListener("input", renderHistory);
 
   document.querySelector("#clearCalculatorHistory").addEventListener("click", () => {
     const previousHistory = [...history];

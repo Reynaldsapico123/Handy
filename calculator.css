@@ -136,6 +136,26 @@ body.dark .history-clear { color: #c6baff; }
   cursor: pointer;
 }
 .history-clear:hover { background: var(--bg); }
+.history-search {
+  display: block;
+  margin-bottom: 7px;
+}
+.history-search input {
+  width: 100%;
+  min-height: 38px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--text);
+  background: var(--surface);
+  font: inherit;
+  font-size: 12px;
+}
+.history-search input:focus {
+  border-color: var(--accent);
+  outline: 2px solid color-mix(in srgb, var(--accent) 18%, transparent);
+  outline-offset: 1px;
+}
 .history-list {
   max-height: 160px;
   overflow-y: auto;
@@ -190,6 +210,18 @@ body.dark .history-clear { color: #c6baff; }
   cursor: pointer;
 }
 .history-copy:hover { color: var(--accent); }
+.history-remove {
+  padding: 6px 8px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  color: #a43e47;
+  background: var(--surface);
+  font-size: 11px;
+  cursor: pointer;
+}
+.history-remove:hover { background: #fdeeef; }
+body.dark .history-remove { color: #f08f95; }
+body.dark .history-remove:hover { background: #3a2a31; }
 
 @media (max-width: 640px) {
   .tool-modal {

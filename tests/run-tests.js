@@ -336,6 +336,14 @@ async function run() {
     const historyPosition = await page.locator("#calculatorHistory").evaluate((history) => history.getBoundingClientRect().top);
     const keypadPosition = await page.locator("#calculatorGrid").evaluate((keypad) => keypad.getBoundingClientRect().top);
     assert(historyPosition < keypadPosition);
+    await page.fill("#calculatorHistorySearch", "does-not-exist");
+    assert.strictEqual(await page.locator(".history-item").count(), 0);
+    assert.strictEqual(await page.locator(".history-empty").textContent(), "No calculations match your search.");
+    await page.fill("#calculatorHistorySearch", "");
+    await page.getByRole("button", { name: "Delete calculation 2 + 3" }).click();
+    assert.strictEqual(await page.locator(".history-item").count(), 0);
+    await page.locator("#toast .toast-action").filter({ hasText: "Undo" }).click();
+    assert.strictEqual(await page.locator(".history-item").count(), 1);
     await page.click("#clearCalculatorHistory");
     assert.strictEqual(await page.locator(".history-item").count(), 0);
     await page.locator("#toast .toast-action").filter({ hasText: "Undo" }).click();
