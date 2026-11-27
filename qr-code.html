@@ -18,6 +18,27 @@
       <div class="qr-controls">
         <label class="qr-label" for="qrText">Text or URL</label>
         <textarea id="qrText" maxlength="500" placeholder="Enter a link or message…" rows="4">https://example.com</textarea>
+        <div class="qr-template-tools">
+          <div class="qr-template-type-row">
+            <label class="qr-label" for="qrTemplateType">Preset</label>
+            <select id="qrTemplateType" class="qr-template-select">
+              <option value="text">Text or URL</option>
+              <option value="wifi">Wi-Fi</option>
+              <option value="email">Email</option>
+              <option value="phone">Phone</option>
+            </select>
+          </div>
+          <div class="qr-template-fields" id="qrTemplateFields" hidden>
+            <label id="qrTemplateFieldOneLabel" hidden>
+              <span id="qrTemplateFieldOneText">Network name</span>
+              <input id="qrTemplateFieldOne" type="text" maxlength="120">
+            </label>
+            <label id="qrTemplateFieldTwoLabel" hidden>
+              <span id="qrTemplateFieldTwoText">Password</span>
+              <input id="qrTemplateFieldTwo" type="text" maxlength="120">
+            </label>
+          </div>
+        </div>
 
         <div class="qr-colors">
           <label for="qrForeground">QR color
@@ -33,6 +54,18 @@
           <button type="button" id="qrCopy" class="qr-secondary">Copy</button>
           <button type="button" id="qrDownload" class="qr-secondary">Download</button>
         </div>
+        <section class="qr-saved-templates" aria-labelledby="qrSavedTemplatesTitle">
+          <div class="qr-saved-template-heading">
+            <h3 id="qrSavedTemplatesTitle">Saved QR templates</h3>
+            <button type="button" id="qrSaveTemplate" class="qr-secondary">Save template</button>
+          </div>
+          <label class="qr-template-name" for="qrTemplateName">
+            <span class="sr-only">Template name</span>
+            <input id="qrTemplateName" type="text" maxlength="40" placeholder="Template name" autocomplete="off">
+          </label>
+          <p class="qr-saved-template-empty" id="qrSavedTemplatesEmpty">No saved templates yet.</p>
+          <div class="qr-saved-template-list" id="qrSavedTemplatesList"></div>
+        </section>
       </div>
 
       <div class="qr-preview" id="qrPreview" role="img" aria-label="Generated QR code preview">

@@ -633,6 +633,12 @@ async function run() {
     await page.click("#qrGenerate");
     await page.waitForTimeout(400);
     assert(await page.locator("#qrPreview").evaluate((preview) => preview.classList.contains("generated")));
+    await page.fill("#qrTemplateName", "Handy link");
+    await page.click("#qrSaveTemplate");
+    assert.strictEqual(await page.locator("#qrSavedTemplatesList .qr-saved-template-item").count(), 1);
+    await page.fill("#qrText", "https://changed.example");
+    await page.locator("#qrSavedTemplatesList [data-template-index='0']").click();
+    assert.strictEqual(await page.locator("#qrText").inputValue(), "https://handy.example");
     await page.click("#qrScanTab");
     const qrImage = await page.evaluate(() => {
       const code = qrcode(0, "M");

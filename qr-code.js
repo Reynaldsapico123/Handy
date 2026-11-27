@@ -33,6 +33,18 @@ async function initializeQrCode() {
   const cameraSwitch = document.querySelector("#qrCameraSwitch");
   const flashlightToggle = document.querySelector("#qrFlashlightToggle");
   const cameraStop = document.querySelector("#qrCameraStop");
+  const templateType = document.querySelector("#qrTemplateType");
+  const templateFields = document.querySelector("#qrTemplateFields");
+  const templateFieldOneLabel = document.querySelector("#qrTemplateFieldOneLabel");
+  const templateFieldTwoLabel = document.querySelector("#qrTemplateFieldTwoLabel");
+  const templateFieldOneText = document.querySelector("#qrTemplateFieldOneText");
+  const templateFieldTwoText = document.querySelector("#qrTemplateFieldTwoText");
+  const templateFieldOne = document.querySelector("#qrTemplateFieldOne");
+  const templateFieldTwo = document.querySelector("#qrTemplateFieldTwo");
+  const templateName = document.querySelector("#qrTemplateName");
+  const saveTemplate = document.querySelector("#qrSaveTemplate");
+  const templatesList = document.querySelector("#qrSavedTemplatesList");
+  const templatesEmpty = document.querySelector("#qrSavedTemplatesEmpty");
   let lastQrDataUrl = "";
   let cameraStream = null;
   let cameraFrame = 0;
@@ -41,11 +53,97 @@ async function initializeQrCode() {
   let lastScanAction = "image";
   let scanHistory = [];
   const scanHistoryKey = "handy-qr-scan-history";
+  const templatesKey = "handy-qr-templates";
+  let templates = readQrTemplates();
   const savedQr = JSON.parse(localStorage.getItem("handy-qr-settings") || "null");
   if (savedQr) {
     text.value = savedQr.text || text.value;
     foreground.value = savedQr.foreground || foreground.value;
     background.value = savedQr.background || background.value;
+  }
+
+  function readQrTemplates() {
+    try {
+      const saved = JSON.parse(localStorage.getItem(templatesKey));
+      return Array.isArray(saved) ? saved.filter((template) =>
+        template
+        && typeof template.name === "string"
+        && typeof template.text === "string"
+        && typeof template.foreground === "string"
+        && typeof template.background === "string"
+        && ["text", "wifi", "email", "phone"].includes(template.type)
+      ).slice(0, 8) : [];
+    } catch {
+      return [];
+    }
+  }
+
+  function escapeWifiValue(value) {
+    return value.replace(/([\\;,])/g, "\\$1");
+  }
+
+  function updatePresetText() {
+    const type = templateType.value;
+    if (type === "wifi") {
+      const ssid = templateFieldOne.value.trim();
+      const password = templateFieldTwo.value;
+      text.value = `WIFI:T=WPA;S:${escapeWifiValue(ssid)};P:${escapeWifiValue(password)};;`;
+    } else if (type === "email") {
+      const address = templateFieldOne.value.trim();
+      const subject = templateFieldTwo.value.trim();
+      text.value = subject
+        ? `mailto:${address}?subject=${encodeURIComponent(subject)}`
+        : `mailto:${address}`;
+    } else if (type === "phone") {
+      text.value = templateFieldOne.value.trim()
+        ? `tel:${templateFieldOne.value.replace(/[^\d+]/g, "")}`
+        : "";
+    }
+  }
+
+  function renderPresetFields() {
+    templateFields.hidden = templateType.value === "text";
+    templateFieldOneLabel.hidden = templateType.value === "text";
+    templateFieldTwoLabel.hidden = !["wifi", "email"].includes(templateType.value);
+    if (templateType.value === "wifi") {
+      templateFieldOneText.textContent = "Network name";
+      templateFieldTwoText.textContent = "Password";
+      templateFieldOne.placeholder = "My Wi-Fi";
+      templateFieldTwo.placeholder = "Wi-Fi password";
+      templateFieldTwo.type = "text";
+    } else if (templateType.value === "email") {
+      templateFieldOneLabel.hidden = false;
+      templateFieldOneText.textContent = "Email address";
+      templateFieldTwoText.textContent = "Subject";
+      templateFieldOne.placeholder = "name@example.com";
+      templateFieldTwo.placeholder = "Message subject";
+    } else if (templateType.value === "phone") {
+      templateFieldOneLabel.hidden = false;
+      templateFieldOneText.textContent = "Phone number";
+      templateFieldOne.placeholder = "+1 555 123 4567";
+    }
+  }
+
+  function renderQrTemplates() {
+    templatesList.replaceChildren();
+    templatesEmpty.hidden = templates.length > 0;
+    templates.forEach((template, index) => {
+      const item = document.createElement("div");
+      item.className = "qr-saved-template-item";
+      const apply = document.createElement("button");
+      apply.type = "button";
+      apply.dataset.templateIndex = String(index);
+      apply.textContent = template.name;
+      apply.setAttribute("aria-label", `Apply QR template ${template.name}`);
+      const remove = document.createElement("button");
+      remove.type = "button";
+      remove.className = "qr-template-remove";
+      remove.dataset.removeTemplateIndex = String(index);
+      remove.textContent = "×";
+      remove.setAttribute("aria-label", `Delete QR template ${template.name}`);
+      item.append(apply, remove);
+      templatesList.append(item);
+    });
   }
 
   async function generateQr() {
@@ -107,6 +205,92 @@ async function initializeQrCode() {
   });
   foreground.addEventListener("input", generateQr);
   background.addEventListener("input", generateQr);
+  templateType.addEventListener("change", () => {
+    templateFieldOne.value = "";
+    templateFieldTwo.value = "";
+    renderPresetFields();
+    if (templateType.value === "text") text.value = "";
+    else updatePresetText();
+  });
+  templateFieldOne.addEventListener("input", () => {
+    if (templateType.value !== "text") updatePresetText();
+  });
+  templateFieldTwo.addEventListener("input", () => {
+    if (templateType.value !== "text") updatePresetText();
+  });
+  saveTemplate.addEventListener("click", () => {
+    const name = templateName.value.trim();
+    if (!name) {
+      showToast("Enter a template name.");
+      templateName.focus();
+      return;
+    }
+    if (!text.value.trim()) {
+      showToast("Enter template content first.");
+      text.focus();
+      return;
+    }
+    if (templates.length >= 8) {
+      showToast("You can save up to 8 QR templates.");
+      return;
+    }
+    templates.push({
+      name,
+      text: text.value,
+      foreground: foreground.value,
+      background: background.value,
+      type: templateType.value
+    });
+    try {
+      localStorage.setItem(templatesKey, JSON.stringify(templates));
+      templateName.value = "";
+      renderQrTemplates();
+      showToast("QR template saved.");
+    } catch (error) {
+      templates.pop();
+      console.error("Could not save QR templates.", error);
+      showToast("Could not save the QR template.");
+    }
+  });
+  templatesList.addEventListener("click", (event) => {
+    const removeButton = event.target.closest("[data-remove-template-index]");
+    if (removeButton) {
+      const index = Number(removeButton.dataset.removeTemplateIndex);
+      const removed = templates[index];
+      if (!removed) return;
+      templates.splice(index, 1);
+      try {
+        localStorage.setItem(templatesKey, JSON.stringify(templates));
+        renderQrTemplates();
+        showToast("QR template deleted.", {
+          label: "Undo",
+          onClick: () => {
+            templates.splice(Math.min(index, templates.length), 0, removed);
+            localStorage.setItem(templatesKey, JSON.stringify(templates));
+            renderQrTemplates();
+            showToast("QR template restored.");
+          }
+        });
+      } catch (error) {
+        templates.splice(Math.min(index, templates.length), 0, removed);
+        console.error("Could not delete QR template.", error);
+        showToast("Could not delete the QR template.");
+      }
+      return;
+    }
+    const applyButton = event.target.closest("[data-template-index]");
+    if (!applyButton) return;
+    const template = templates[Number(applyButton.dataset.templateIndex)];
+    if (!template) return;
+    templateType.value = template.type || "text";
+    text.value = template.text;
+    foreground.value = template.foreground;
+    background.value = template.background;
+    templateFieldOne.value = "";
+    templateFieldTwo.value = "";
+    renderPresetFields();
+    generateQr();
+  });
 
   document.querySelector("#qrCopy").addEventListener("click", async () => {
     if (!lastQrDataUrl) await generateQr();
@@ -331,6 +515,8 @@ async function initializeQrCode() {
     }
   });
 
+  renderPresetFields();
+  renderQrTemplates();
   loadScanHistory();
 
   scanRetry.addEventListener("click", () => {

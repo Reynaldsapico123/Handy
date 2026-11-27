@@ -3338,6 +3338,7 @@ clearLocalDataButton.addEventListener("click", () => {
       ...backupKeys,
       "handy-calculator-history",
       "handy-qr-settings",
+      "handy-qr-templates",
       "handy-qr-scan-history",
       recentSearchesKey,
       personalizationPresetKey,
