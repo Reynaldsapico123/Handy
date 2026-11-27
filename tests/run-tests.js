@@ -879,6 +879,11 @@ async function run() {
     assert.strictEqual(await page.locator("#diagnosticVersion").textContent(), "1.0.0");
     assert((await page.locator("#diagnosticBuild").textContent()).length > 0);
     assert.strictEqual(await page.locator("#diagnosticProduction").textContent(), "https://handy-6on.pages.dev");
+    assert((await page.locator("#diagnosticCacheEntries").textContent()).length > 0);
+    assert(["No pending update", "Update waiting", "Update installing", "Unavailable", "Status unavailable"].includes(
+      await page.locator("#diagnosticPendingUpdate").textContent()
+    ));
+    assert((await page.locator("#diagnosticLastChecked").textContent()).length > 0);
     await page.click("#copyDiagnostics");
     await page.waitForFunction(() =>
       document.querySelector("#diagnosticsStatus").textContent === "Diagnostics copied."

@@ -3402,6 +3402,7 @@ clearLocalDataButton.addEventListener("click", () => {
       "handy-qr-settings",
       "handy-qr-templates",
       "handy-qr-scan-history",
+      "handy-diagnostics-last-checked",
       recentSearchesKey,
       personalizationPresetKey,
       feedbackDraftKey
@@ -3487,6 +3488,9 @@ const diagnosticMode = document.querySelector("#diagnosticMode");
 const diagnosticWorker = document.querySelector("#diagnosticWorker");
 const diagnosticCache = document.querySelector("#diagnosticCache");
 const diagnosticCacheVersion = document.querySelector("#diagnosticCacheVersion");
+const diagnosticCacheEntries = document.querySelector("#diagnosticCacheEntries");
+const diagnosticPendingUpdate = document.querySelector("#diagnosticPendingUpdate");
+const diagnosticLastChecked = document.querySelector("#diagnosticLastChecked");
 const diagnosticVersion = document.querySelector("#diagnosticVersion");
 const diagnosticBuild = document.querySelector("#diagnosticBuild");
 const diagnosticProduction = document.querySelector("#diagnosticProduction");
@@ -3498,6 +3502,12 @@ const copyDiagnosticsButton = document.querySelector("#copyDiagnostics");
 const clearUpdateHistoryButton = document.querySelector("#clearUpdateHistory");
 
 async function refreshDiagnostics() {
+  const checkedAt = new Date();
+  diagnosticLastChecked.textContent = new Intl.DateTimeFormat(undefined, {
+    dateStyle: "medium",
+    timeStyle: "short"
+  }).format(checkedAt);
+  localStorage.setItem("handy-diagnostics-last-checked", checkedAt.toISOString());
   diagnosticVersion.textContent =
     document.querySelector('meta[name="handy-version"]')?.content || "Unknown";
   diagnosticBuild.textContent =
@@ -3523,6 +3533,7 @@ async function refreshDiagnostics() {
 
   if (!("serviceWorker" in navigator)) {
     diagnosticWorker.textContent = "Unavailable";
+    diagnosticPendingUpdate.textContent = "Unavailable";
   } else {
     try {
       const registration = await navigator.serviceWorker.getRegistration();
@@ -3533,9 +3544,15 @@ async function refreshDiagnostics() {
         : registration
           ? "Registered, waiting for activation"
           : "Not registered";
+      diagnosticPendingUpdate.textContent = registration?.waiting
+        ? "Update waiting"
+        : registration?.installing
+          ? "Update installing"
+          : "No pending update";
     } catch (error) {
       console.error("Could not read service-worker diagnostics.", error);
       diagnosticWorker.textContent = "Status unavailable";
+      diagnosticPendingUpdate.textContent = "Status unavailable";
     }
   }
 
@@ -3550,6 +3567,14 @@ async function refreshDiagnostics() {
         ? `${handyCaches.length} Handy cache${handyCaches.length === 1 ? "" : "s"} found`
         : "No Handy cache found";
       diagnosticCacheVersion.textContent = handyCaches.join(", ") || "None";
+      let cachedEntries = 0;
+      await Promise.all(handyCaches.map(async (name) => {
+        const cache = await caches.open(name);
+        cachedEntries += (await cache.keys()).length;
+      }));
+      diagnosticCacheEntries.textContent = handyCaches.length
+        ? `${cachedEntries} cached request${cachedEntries === 1 ? "" : "s"}`
+        : "No cached requests";
       offlineRecoveryStatus.textContent = handyCaches.length
         ? "Offline recovery ready. A cached app version is available."
         : "Offline recovery missing. Refresh while online to create the cache.";
@@ -3557,6 +3582,7 @@ async function refreshDiagnostics() {
       console.error("Could not read offline-cache diagnostics.", error);
       diagnosticCache.textContent = "Status unavailable";
       diagnosticCacheVersion.textContent = "Status unavailable";
+      diagnosticCacheEntries.textContent = "Status unavailable";
       offlineRecoveryStatus.textContent = "Offline recovery status unavailable.";
     }
   }
@@ -3579,6 +3605,9 @@ copyDiagnosticsButton.addEventListener("click", async () => {
     `Service worker: ${diagnosticWorker.textContent}`,
     `Offline cache: ${diagnosticCache.textContent}`,
     `Cache version: ${diagnosticCacheVersion.textContent}`,
+    `Cached assets: ${diagnosticCacheEntries.textContent}`,
+    `Pending update: ${diagnosticPendingUpdate.textContent}`,
+    `Last checked: ${diagnosticLastChecked.textContent}`,
     `Update history: ${diagnosticUpdateHistory.textContent}`
   ].join("\n");
 

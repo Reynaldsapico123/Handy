@@ -159,6 +159,7 @@ async function run() {
       document.querySelector("#diagnosticsStatus").textContent === "Diagnostics refreshed."
     );
     assert.strictEqual(await page.locator("#diagnosticMode").textContent(), "Installed PWA");
+    assert((await page.locator("#diagnosticCacheEntries").textContent()).length > 0);
 
     console.log("PWA UX audit passed: manifest, icons, install choices, standalone mode, and update controls.");
   } finally {
