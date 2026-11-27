@@ -7,6 +7,13 @@ async function initializeWorldClock() {
   const modal = document.querySelector("#worldClockModal");
   const citySelect = document.querySelector("#clockCity");
   const list = document.querySelector("#clockList");
+  const meetingForm = document.querySelector("#clockMeetingForm");
+  const meetingDate = document.querySelector("#clockMeetingDate");
+  const meetingStart = document.querySelector("#clockMeetingStart");
+  const meetingEnd = document.querySelector("#clockMeetingEnd");
+  const meetingStatus = document.querySelector("#clockMeetingStatus");
+  const meetingSlots = document.querySelector("#clockMeetingSlots");
+  const meetingCopy = document.querySelector("#clockMeetingCopy");
   const defaultCities = [
     "Asia/Singapore",
     "Europe/London",
@@ -15,6 +22,9 @@ async function initializeWorldClock() {
 
   let cities = loadCities();
   let clockTimer;
+  let selectedMeetingAt = null;
+  const meetingPartsFormatters = new Map();
+  const meetingDisplayFormatters = new Map();
 
   function loadCities() {
     try {
@@ -48,6 +58,122 @@ async function initializeWorldClock() {
       timeZoneName: "short"
     }).formatToParts(new Date());
     return parts.find((part) => part.type === "timeZoneName")?.value || getOffset(timeZone);
+  }
+
+  function localDateValue(date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  }
+
+  function getMeetingDateParts(timeZone, timestamp) {
+    if (!meetingPartsFormatters.has(timeZone)) {
+      meetingPartsFormatters.set(timeZone, new Intl.DateTimeFormat("en-US-u-nu-latn", {
+        timeZone,
+        hourCycle: "h23",
+        hour: "2-digit",
+        minute: "2-digit"
+      }));
+    }
+    return Object.fromEntries(
+      meetingPartsFormatters.get(timeZone).formatToParts(new Date(timestamp))
+        .map(({ type, value }) => [type, value])
+    );
+  }
+
+  function formatMeetingDateTime(timeZone, timestamp) {
+    if (!meetingDisplayFormatters.has(timeZone)) {
+      meetingDisplayFormatters.set(timeZone, new Intl.DateTimeFormat("en-US", {
+        timeZone,
+        weekday: "short",
+        month: "short",
+        day: "numeric",
+        hour: "numeric",
+        minute: "2-digit",
+        timeZoneName: "short"
+      }));
+    }
+    return meetingDisplayFormatters.get(timeZone).format(new Date(timestamp));
+  }
+
+  function clearMeetingOptions(message) {
+    selectedMeetingAt = null;
+    meetingSlots.replaceChildren();
+    meetingCopy.disabled = true;
+    if (message) meetingStatus.textContent = message;
+  }
+
+  function timeInWorkday(timeZone, timestamp, workStart, workEnd) {
+    const parts = getMeetingDateParts(timeZone, timestamp);
+    const minuteOfDay = (Number(parts.hour) % 24) * 60 + Number(parts.minute);
+    return minuteOfDay >= workStart && minuteOfDay < workEnd;
+  }
+
+  function findMeetingTimes() {
+    clearMeetingOptions();
+    if (cities.length < 2) {
+      meetingStatus.textContent = "Add at least two cities to find shared meeting times.";
+      return;
+    }
+
+    const dateParts = /^(\d{4})-(\d{2})-(\d{2})$/.exec(meetingDate.value);
+    const startParts = /^(\d{2}):(\d{2})$/.exec(meetingStart.value);
+    const endParts = /^(\d{2}):(\d{2})$/.exec(meetingEnd.value);
+    if (!dateParts || !startParts || !endParts) {
+      meetingStatus.textContent = "Choose a valid date and workday range.";
+      return;
+    }
+
+    const [, year, month, day] = dateParts.map(Number);
+    const workStart = Number(startParts[1]) * 60 + Number(startParts[2]);
+    const workEnd = Number(endParts[1]) * 60 + Number(endParts[2]);
+    if (workStart >= workEnd) {
+      meetingStatus.textContent = "Workday end must be later than its start.";
+      return;
+    }
+
+    const localStart = new Date(year, month - 1, day);
+    if (localStart.getFullYear() !== year || localStart.getMonth() !== month - 1 || localStart.getDate() !== day) {
+      meetingStatus.textContent = "Choose a valid date.";
+      return;
+    }
+    const localEnd = new Date(year, month - 1, day + 1);
+    const duration = 30 * 60 * 1000;
+    const localTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+    const options = [];
+
+    for (let timestamp = localStart.getTime(); timestamp + duration <= localEnd.getTime(); timestamp += duration) {
+      const lastMinute = timestamp + duration - 60 * 1000;
+      const overlapsAllCities = cities.every((timeZone) =>
+        timeInWorkday(timeZone, timestamp, workStart, workEnd)
+        && timeInWorkday(timeZone, lastMinute, workStart, workEnd)
+      );
+      if (overlapsAllCities) options.push(timestamp);
+    }
+
+    for (const timestamp of options) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "clock-meeting-slot";
+      button.dataset.meetingAt = String(timestamp);
+      button.setAttribute("aria-pressed", "false");
+      const localTime = formatMeetingDateTime(localTimeZone, timestamp);
+      const cityTimes = cities
+        .map((timeZone) => `${cityName(timeZone)}: ${formatMeetingDateTime(timeZone, timestamp)}`)
+        .join(" · ");
+      const heading = document.createElement("strong");
+      heading.textContent = `Your time · ${localTime}`;
+      const details = document.createElement("span");
+      details.textContent = cityTimes;
+      button.setAttribute("aria-label", `Select meeting time. Your time: ${localTime}. ${cityTimes}`);
+      button.append(heading, details);
+      meetingSlots.appendChild(button);
+    }
+
+    meetingStatus.textContent = options.length
+      ? `${options.length} shared 30-minute start times found. Select one to copy.`
+      : "No shared working-time overlap found. Try another date or wider hours.";
   }
 
   function render() {
@@ -92,6 +218,7 @@ async function initializeWorldClock() {
       cities.push(citySelect.value);
       saveCities();
       render();
+      clearMeetingOptions("City list changed. Find times again to include it.");
     }
   });
 
@@ -122,6 +249,7 @@ async function initializeWorldClock() {
     cities = cities.filter((timeZone) => timeZone !== removedTimeZone);
     saveCities();
     render();
+    clearMeetingOptions("City list changed. Find times again to include it.");
     showToast(`Removed ${removedName}.`, {
       label: "Undo",
       onClick: () => {
@@ -129,16 +257,55 @@ async function initializeWorldClock() {
           cities.splice(Math.max(0, removedIndex), 0, removedTimeZone);
           saveCities();
           render();
+          clearMeetingOptions("City list changed. Find times again to include it.");
         }
         showToast(`${removedName} restored.`);
       }
     });
   });
 
+  meetingDate.value = localDateValue(new Date());
+  meetingForm.addEventListener("input", () => {
+    clearMeetingOptions("Update the date or workday, then find times again.");
+  });
+  meetingForm.addEventListener("submit", (event) => {
+    event.preventDefault();
+    findMeetingTimes();
+  });
+  meetingSlots.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-meeting-at]");
+    if (!button) return;
+    selectedMeetingAt = Number(button.dataset.meetingAt);
+    meetingSlots.querySelectorAll("[data-meeting-at]").forEach((option) => {
+      option.setAttribute("aria-pressed", String(option === button));
+    });
+    meetingCopy.disabled = false;
+    meetingStatus.textContent = "Meeting time selected. Copy it to share the local times.";
+  });
+  meetingCopy.addEventListener("click", async () => {
+    if (!Number.isFinite(selectedMeetingAt)) return;
+    const localTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+    const lines = [
+      `Handy meeting time — ${formatMeetingDateTime(localTimeZone, selectedMeetingAt)} (${localTimeZone})`,
+      ...cities.map((timeZone) =>
+        `${cityName(timeZone)} — ${formatMeetingDateTime(timeZone, selectedMeetingAt)}`
+      )
+    ];
+    try {
+      if (!navigator.clipboard?.writeText) throw new Error("Clipboard access is unavailable.");
+      await navigator.clipboard.writeText(lines.join("\n"));
+      showToast("Meeting time copied.");
+    } catch (error) {
+      console.error("Could not copy the meeting time.", error);
+      showToast("Could not copy the meeting time. Check clipboard permissions.");
+    }
+  });
+
   window.openWorldClock = function (preset) {
     if (preset?.timeZone && citySelect.querySelector(`option[value="${CSS.escape(preset.timeZone)}"]`)) {
       cities = [preset.timeZone, ...cities.filter((timeZone) => timeZone !== preset.timeZone)];
       saveCities();
+      clearMeetingOptions("City list changed. Find times again to include it.");
     }
     window.openAccessibleModal(modal);
     modal.hidden = false;

@@ -96,6 +96,84 @@
   cursor: pointer;
 }
 .clock-remove:hover { color: #cf5d62; background: rgba(207, 93, 98, 0.08); }
+.clock-meeting-planner {
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+.clock-meeting-heading h3 { margin: 0; font-size: 16px; }
+.clock-meeting-heading p,
+.clock-meeting-hint,
+.clock-meeting-status {
+  margin: 6px 0 12px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+.clock-meeting-form {
+  display: grid;
+  grid-template-columns: minmax(140px, 1.2fr) minmax(95px, 0.8fr) minmax(95px, 0.8fr) auto;
+  gap: 9px;
+  align-items: end;
+}
+.clock-meeting-field {
+  min-width: 0;
+  display: grid;
+  gap: 5px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+}
+.clock-meeting-field input {
+  width: 100%;
+  min-width: 0;
+  height: 40px;
+  padding: 0 8px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  color: var(--text);
+  background: var(--surface);
+  font: inherit;
+}
+.clock-meeting-submit,
+.clock-meeting-copy {
+  min-height: 40px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 9px;
+  color: white;
+  background: var(--accent);
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.clock-meeting-hint { margin: 9px 0; }
+.clock-meeting-status { margin: 0 0 8px; }
+.clock-meeting-slots {
+  display: grid;
+  gap: 7px;
+  max-height: 220px;
+  overflow-y: auto;
+}
+.clock-meeting-slot {
+  width: 100%;
+  display: grid;
+  gap: 4px;
+  padding: 9px 11px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  color: var(--text);
+  background: var(--bg);
+  text-align: left;
+  cursor: pointer;
+}
+.clock-meeting-slot[aria-pressed="true"] {
+  border-color: var(--accent);
+}
+.clock-meeting-slot strong { font-size: 13px; }
+.clock-meeting-slot span { color: var(--muted); font-size: 11px; line-height: 1.4; }
+.clock-meeting-copy { margin-top: 9px; }
+.clock-meeting-copy:disabled { opacity: 0.55; cursor: not-allowed; }
 .sr-only {
   position: absolute;
   width: 1px;
@@ -112,4 +190,6 @@
   .clock-card { grid-template-columns: 1fr auto; }
   .clock-offset { display: none; }
   .clock-time { font-size: 24px; }
+  .clock-meeting-form { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .clock-meeting-submit { grid-column: 1 / -1; }
 }

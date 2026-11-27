@@ -88,6 +88,7 @@ async function run() {
         writeText: async (text) => {
           window.copiedToolLink = text;
           window.copiedCurrencyConversion = text;
+          window.copiedMeetingTime = text;
         }
       }
     });
@@ -457,6 +458,24 @@ async function run() {
     assert((await page.locator("#clockList .clock-card").filter({ hasText: "Tokyo" }).count()) === 0);
     await page.locator("#toast .toast-action").filter({ hasText: "Undo" }).click();
     assert((await page.locator("#clockList .clock-card").filter({ hasText: "Tokyo" }).count()) === 1);
+    for (const city of ["Singapore", "Tokyo"]) {
+      await page.locator("#clockList .clock-card").filter({ hasText: city }).locator(".clock-remove").click();
+    }
+    await page.locator("#clockMeetingDate").fill("2026-11-02");
+    await page.locator("#clockMeetingStart").fill("09:00");
+    await page.locator("#clockMeetingEnd").fill("10:00");
+    await page.locator("#clockMeetingForm").getByRole("button", { name: "Find times" }).click();
+    assert.strictEqual(await page.locator(".clock-meeting-slot").count(), 0);
+    assert.match(await page.locator("#clockMeetingStatus").textContent(), /No shared working-time overlap/);
+    await page.locator("#clockMeetingEnd").fill("17:00");
+    await page.locator("#clockMeetingForm").getByRole("button", { name: "Find times" }).click();
+    assert((await page.locator(".clock-meeting-slot").count()) > 0);
+    assert.match(await page.locator(".clock-meeting-slots").textContent(), /EST/);
+    await page.locator(".clock-meeting-slot").first().click();
+    assert.strictEqual(await page.locator("#clockMeetingCopy").isDisabled(), false);
+    await page.locator("#clockMeetingCopy").click();
+    await page.waitForFunction(() => window.copiedMeetingTime?.includes("New York"));
+    assert.match(await page.evaluate(() => window.copiedMeetingTime), /London/);
     await page.keyboard.press("Escape");
 
     let rateRequests = 0;

@@ -29,5 +29,37 @@
     </div>
 
     <div class="clock-list" id="clockList"></div>
+
+    <section class="clock-meeting-planner" aria-labelledby="clockMeetingTitle">
+      <div class="clock-meeting-heading">
+        <h3 id="clockMeetingTitle">Find a meeting time</h3>
+        <p>Find 30-minute slots when every saved city is within working hours.</p>
+      </div>
+      <form class="clock-meeting-form" id="clockMeetingForm">
+        <label class="clock-meeting-field" for="clockMeetingDate">
+          <span>Date (your local time)</span>
+          <input id="clockMeetingDate" type="date" required>
+        </label>
+        <label class="clock-meeting-field" for="clockMeetingStart">
+          <span>Workday starts</span>
+          <input id="clockMeetingStart" type="time" value="09:00" required>
+        </label>
+        <label class="clock-meeting-field" for="clockMeetingEnd">
+          <span>Workday ends</span>
+          <input id="clockMeetingEnd" type="time" value="17:00" required>
+        </label>
+        <button class="clock-meeting-submit" type="submit">Find times</button>
+      </form>
+      <p class="clock-meeting-hint">Times are shown in each city's local time, including daylight-saving changes.</p>
+      <div class="clock-meeting-results">
+        <p class="clock-meeting-status" id="clockMeetingStatus" role="status" aria-live="polite">
+          Choose a date and working hours to find shared times.
+        </p>
+        <div class="clock-meeting-slots" id="clockMeetingSlots"></div>
+        <button class="clock-meeting-copy" id="clockMeetingCopy" type="button" disabled>
+          Copy selected time
+        </button>
+      </div>
+    </section>
   </section>
 </div>

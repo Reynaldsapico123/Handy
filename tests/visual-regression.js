@@ -218,6 +218,9 @@ async function run() {
             await page.click("#qrScanTab");
             await page.waitForTimeout(150);
           }
+          if (target.name === "world-clock") {
+            await page.locator("#clockMeetingDate").fill("2026-11-27");
+          }
           if (target.maskDynamic) {
             await page.locator(target.maskDynamic).evaluateAll((elements) =>
               elements.forEach((element) => { element.style.visibility = "hidden"; })
