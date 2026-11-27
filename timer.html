@@ -22,11 +22,23 @@
       <input id="timerMinutes" type="number" min="0" max="999" value="5">
       <label for="timerSeconds">Seconds</label>
       <input id="timerSeconds" type="number" min="0" max="59" value="0">
+      <div class="timer-presets" aria-label="Timer presets">
+        <button type="button" class="timer-preset" data-minutes="3">Tea · 3 min</button>
+        <button type="button" class="timer-preset" data-minutes="5">Break · 5 min</button>
+        <button type="button" class="timer-preset" data-minutes="15">Long break · 15 min</button>
+        <button type="button" class="timer-preset" data-minutes="25">Focus · 25 min</button>
+      </div>
     </div>
 
     <div class="timer-actions">
       <button type="button" class="timer-primary" id="timerStart" aria-label="Start timer">Start</button>
+      <button type="button" class="timer-secondary timer-lap-button" id="timerLap" hidden>Lap</button>
       <button type="button" class="timer-secondary" id="timerReset">Reset</button>
     </div>
+
+    <section class="timer-laps" id="timerLaps" aria-label="Stopwatch laps" hidden>
+      <h3>Laps</h3>
+      <ol id="timerLapList" aria-live="polite"></ol>
+    </section>
   </section>
 </div>

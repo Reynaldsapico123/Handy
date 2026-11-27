@@ -10,6 +10,7 @@ const root = path.resolve(__dirname, "..", "dist");
 const baselineDir = path.join(__dirname, "visual-baselines");
 const diffDir = path.join(__dirname, "visual-diffs");
 const updateBaselines = process.argv.includes("--update");
+const targetFilter = process.argv.find((argument) => argument.startsWith("--target="))?.slice(9);
 const maxDiffRatio = 0.08;
 
 const mimeTypes = {
@@ -32,6 +33,10 @@ const targets = [
   { name: "qr-scanner", trigger: "#qrScanShortcut", modal: "#qrModal" },
   { name: "guides", trigger: ".learn-link", modal: "#guidesModal" }
 ];
+
+if (targetFilter && !targets.some((target) => target.name === targetFilter)) {
+  throw new Error(`Unknown visual target: ${targetFilter}`);
+}
 
 const server = http.createServer((request, response) => {
   const pathname = new URL(request.url, "http://127.0.0.1").pathname;
@@ -161,9 +166,10 @@ async function run() {
       for (const theme of ["light", "dark"]) {
         await page.goto(`http://127.0.0.1:${server.address().port}/`, { waitUntil: "networkidle" });
         await setTheme(page, theme);
-        await capture(page, `homepage-${viewport.name}-${theme}`);
+        if (!targetFilter) await capture(page, `homepage-${viewport.name}-${theme}`);
 
         for (const target of targets) {
+          if (targetFilter && target.name !== targetFilter) continue;
           await page.locator(target.trigger).click();
           const modal = page.locator(target.modal);
           await modal.waitFor({ state: "visible" });

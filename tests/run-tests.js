@@ -397,6 +397,8 @@ async function run() {
     assert.strictEqual(await page.locator("#timerStart").getAttribute("aria-label"), "Start timer");
     await page.click("#timerStart");
     assert.strictEqual(await page.locator("#timerStart").getAttribute("aria-label"), "Pause timer");
+    await page.fill("#timerSeconds", "2");
+    assert.strictEqual(await page.locator("#timerTime").textContent(), "05:02");
     await page.waitForFunction(() =>
       document.querySelector("#timerStatus").textContent.includes("Timer started")
     );
@@ -410,6 +412,37 @@ async function run() {
       document.querySelector("#timerStatus").textContent.includes("Timer reset")
     );
     assert.match(await page.locator("#timerStatus").textContent(), /Timer reset/);
+    await page.getByRole("button", { name: "Tea · 3 min" }).click();
+    assert.strictEqual(await page.locator("#timerMinutes").inputValue(), "3");
+    assert.strictEqual(await page.locator("#timerSeconds").inputValue(), "0");
+    await page.click("#timerStart");
+    await page.keyboard.press("Escape");
+    assert(await page.locator("#timerModal").evaluate((modal) => modal.hidden));
+    assert(await page.evaluate(() => Number.isFinite(
+      JSON.parse(localStorage.getItem("handy-timer-state"))?.endsAt
+    )));
+    await page.reload();
+    await page.getByRole("button", { name: "Open Timer and Stopwatch" }).click();
+    await page.waitForSelector("#timerModal:not([hidden])");
+    assert.strictEqual(await page.locator("#timerStart").getAttribute("aria-label"), "Pause timer");
+    const restoredTime = (await page.locator("#timerTime").textContent()).split(":").map(Number);
+    assert(restoredTime[0] * 60 + restoredTime[1] >= 178);
+    assert(restoredTime[0] * 60 + restoredTime[1] <= 180);
+    await page.click("#timerStart");
+    await page.click("#timerReset");
+    await page.locator(".timer-tab[data-mode='stopwatch']").click();
+    assert(await page.locator("#timerDuration").evaluate((element) => element.classList.contains("hidden")));
+    assert(await page.locator("#timerLap").isVisible());
+    assert(await page.locator("#timerLap").isDisabled());
+    await page.click("#timerStart");
+    await page.waitForTimeout(1100);
+    await page.click("#timerLap");
+    assert.strictEqual(await page.locator("#timerLapList li").count(), 1);
+    assert.match(await page.locator("#timerLapList li").first().textContent(), /Lap 1.*Split 00:0[1-9]/);
+    await page.click("#timerStart");
+    assert(await page.locator("#timerLap").isDisabled());
+    await page.click("#timerReset");
+    assert.strictEqual(await page.locator("#timerLapList li").count(), 0);
     await page.keyboard.press("Escape");
 
     await page.getByRole("button", { name: "Open World Clock" }).click();
