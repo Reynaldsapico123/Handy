@@ -239,7 +239,7 @@ async function run() {
       if (viewport.name === "mobile") {
         const mobileMetrics = await page.evaluate(() => {
           const targets = [...document.querySelectorAll(
-            "#menuToggle, #themeToggle, #installApp, #qrScanShortcut, .mobile-bottom-nav a"
+            "#menuToggle, #themeToggle, #installApp, #qrScanShortcut, .mobile-bottom-nav a, .mobile-bottom-nav button"
           )]
             .filter((element) => element.getClientRects().length > 0)
             .map((element) => {

@@ -652,18 +652,18 @@
   </footer>
 
   <nav class="mobile-bottom-nav" aria-label="Quick navigation">
-    <a href="#" aria-label="Home">
+    <a href="#" aria-label="Home" data-mobile-nav="home">
       <span aria-hidden="true">⌂</span>
       <span>Home</span>
     </a>
-    <a href="#tools" aria-label="Tools">
+    <button type="button" data-mobile-nav="scan">
       <span aria-hidden="true">▦</span>
-      <span>Tools</span>
-    </a>
-    <a href="#savedTools" aria-label="Saved tools">
+      <span>Scan QR</span>
+    </button>
+    <button type="button" data-mobile-nav="favorite">
       <span aria-hidden="true">★</span>
-      <span>Saved</span>
-    </a>
+      <span id="mobileFavoriteNavLabel">Saved</span>
+    </button>
   </nav>
 
   <article class="print-trip-summary" id="printTripSummary" aria-hidden="true">

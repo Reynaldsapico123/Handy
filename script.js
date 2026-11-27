@@ -771,6 +771,43 @@ renderToolCustomizer();
 
 const savedToolsGrid = document.querySelector("#savedToolsGrid");
 
+function renderMobileFavoriteNav(favorites, recent, usage) {
+  const favoriteButton = document.querySelector('[data-mobile-nav="favorite"]');
+  const favoriteLabel = document.querySelector("#mobileFavoriteNavLabel");
+  if (!favoriteButton || !favoriteLabel) return;
+
+  let rankedName = favorites[0];
+  if (!rankedName) {
+    const ranked = Object.entries(usage)
+      .filter(([name, count]) => toolLayoutKeySet.has(name) && Number.isInteger(count) && count > 0)
+      .sort(([, countA], [, countB]) => countB - countA);
+    rankedName = ranked[0]?.[0] || recent[0] || "Calculator";
+  }
+  favoriteLabel.textContent = rankedName === "Timer & Stopwatch"
+    ? "Timer"
+    : rankedName === "World Clock"
+      ? "Clock"
+      : rankedName === "Unit Converter"
+        ? "Convert"
+        : rankedName === "Currency Exchange"
+          ? "Currency"
+          : rankedName.replace(" Code Maker", "");
+  favoriteButton.dataset.favoriteTool = rankedName;
+}
+
+document.querySelector('[data-mobile-nav="scan"]')?.addEventListener("click", () => {
+  saveRecentTool("QR Code Maker");
+  recordToolUsage("QR Code Maker");
+  openLinkedTool("qr", "scan");
+});
+
+document.querySelector('[data-mobile-nav="favorite"]')?.addEventListener("click", (event) => {
+  const name = event.currentTarget.dataset.favoriteTool;
+  const card = toolCards.find((item) => item.querySelector("h3").textContent === name);
+  if (!card) return;
+  card.querySelector(".card-arrow")?.click();
+});
+
 function renderDashboardInsights() {
   const topToolElement = document.querySelector("#insightTopTool");
   const topToolDetail = document.querySelector("#insightTopToolDetail");
@@ -881,6 +918,8 @@ function renderSavedTools() {
       card?.querySelector(".card-arrow").click();
     });
   });
+
+  renderMobileFavoriteNav(favorites, recent, usage);
 }
 
 document.querySelector("#clearRecent").addEventListener("click", () => {

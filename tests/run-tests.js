@@ -912,7 +912,7 @@ async function run() {
     assert.strictEqual(await page.evaluate(() => getComputedStyle(document.documentElement).scrollBehavior), "auto");
     await page.emulateMedia({ reducedMotion: "no-preference" });
     assert(await page.locator(".mobile-bottom-nav").isVisible());
-    assert.strictEqual(await page.locator(".mobile-bottom-nav a").count(), 3);
+    assert.strictEqual(await page.locator(".mobile-bottom-nav a, .mobile-bottom-nav button").count(), 3);
     assert.strictEqual(await page.evaluate(() => getComputedStyle(document.documentElement).width), "390px");
     assert(await page.evaluate(() => {
       const navButton = document.querySelector("#menuToggle");

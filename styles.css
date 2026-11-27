@@ -2413,7 +2413,8 @@ body.dark .connection-status[data-state="offline"] { color: #f3c27f; }
     background: color-mix(in srgb, var(--surface) 94%, transparent);
     backdrop-filter: blur(16px);
   }
-  .mobile-bottom-nav a {
+  .mobile-bottom-nav a,
+  .mobile-bottom-nav button {
     min-width: 44px;
     min-height: 54px;
     display: flex;
@@ -2421,15 +2422,21 @@ body.dark .connection-status[data-state="offline"] { color: #f3c27f; }
     align-items: center;
     justify-content: center;
     gap: 2px;
+    border: 0;
     border-radius: 10px;
     color: var(--muted);
+    background: transparent;
     text-decoration: none;
+    font: inherit;
     font-size: 11px;
     font-weight: 800;
+    cursor: pointer;
   }
   .mobile-bottom-nav a:first-child { color: var(--accent-text); }
-  .mobile-bottom-nav a span:first-child { font-size: 18px; line-height: 1; }
-  .mobile-bottom-nav a:active { background: var(--bg); }
+  .mobile-bottom-nav a span:first-child,
+  .mobile-bottom-nav button span:first-child { font-size: 18px; line-height: 1; }
+  .mobile-bottom-nav a:active,
+  .mobile-bottom-nav button:active { background: var(--bg); }
 
   .tool-modal {
     place-items: end center !important;
