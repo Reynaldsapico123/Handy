@@ -13,6 +13,14 @@ async function initializeCurrency() {
   const status = document.querySelector("#currencyStatus");
   const refreshButton = document.querySelector("#currencyRefresh");
   const liveRatesStorageKey = "handy-currency-live-rates";
+  const favoritesKey = "handy-currency-favorites";
+  const recentKey = "handy-currency-recent";
+  const savePairButton = document.querySelector("#currencySavePair");
+  const favoritesList = document.querySelector("#currencyFavorites");
+  const favoritesEmpty = document.querySelector("#currencyFavoritesEmpty");
+  const recentList = document.querySelector("#currencyRecentList");
+  const recentEmpty = document.querySelector("#currencyRecentEmpty");
+  const clearRecentButton = document.querySelector("#currencyClearRecent");
 
   const currencies = [
     ["USD", "US Dollar"],
@@ -43,6 +51,109 @@ async function initializeCurrency() {
     AED: 3.6725,
     NZD: 1.66
   };
+
+  const currencyCodes = new Set(currencies.map(([code]) => code));
+
+  function readCurrencyArray(key) {
+    try {
+      const saved = JSON.parse(localStorage.getItem(key));
+      return Array.isArray(saved) ? saved : [];
+    } catch {
+      return [];
+    }
+  }
+
+  let favorites = readCurrencyArray(favoritesKey).filter((pair) =>
+    pair
+    && currencyCodes.has(pair.from)
+    && currencyCodes.has(pair.to)
+  ).slice(0, 8);
+  let recent = readCurrencyArray(recentKey).filter((entry) =>
+    entry
+    && currencyCodes.has(entry.from)
+    && currencyCodes.has(entry.to)
+    && typeof entry.amount === "string"
+    && entry.amount.length <= 64
+    && typeof entry.result === "string"
+    && entry.result.length <= 64
+  ).slice(0, 8);
+
+  function pairKey(pair) {
+    return `${pair.from}:${pair.to}`;
+  }
+
+  function renderCurrencyFavorites() {
+    favoritesList.replaceChildren();
+    favoritesEmpty.hidden = favorites.length > 0;
+    favorites.forEach((pair, index) => {
+      const item = document.createElement("div");
+      item.className = "currency-favorite";
+      const apply = document.createElement("button");
+      apply.type = "button";
+      apply.dataset.currencyFavoriteIndex = String(index);
+      apply.textContent = `${pair.from} → ${pair.to}`;
+      apply.setAttribute("aria-label", `Apply saved pair ${pair.from} to ${pair.to}`);
+      const remove = document.createElement("button");
+      remove.type = "button";
+      remove.className = "currency-favorite-remove";
+      remove.dataset.removeCurrencyFavoriteIndex = String(index);
+      remove.textContent = "×";
+      remove.setAttribute("aria-label", `Remove saved pair ${pair.from} to ${pair.to}`);
+      item.append(apply, remove);
+      favoritesList.append(item);
+    });
+  }
+
+  function renderCurrencyRecent() {
+    recentList.replaceChildren();
+    recentEmpty.hidden = recent.length > 0;
+    clearRecentButton.disabled = recent.length === 0;
+    recent.forEach((entry, index) => {
+      const item = document.createElement("div");
+      item.className = "currency-recent-item";
+      const apply = document.createElement("button");
+      apply.type = "button";
+      apply.className = "currency-recent-copy";
+      apply.dataset.currencyRecentIndex = String(index);
+      apply.setAttribute("aria-label", `Repeat conversion ${entry.amount} ${entry.from} to ${entry.to}`);
+      const headline = document.createElement("strong");
+      headline.textContent = `${entry.amount} ${entry.from} → ${entry.result} ${entry.to}`;
+      const detail = document.createElement("span");
+      detail.textContent = `${entry.from} to ${entry.to}`;
+      apply.append(headline, detail);
+      const remove = document.createElement("button");
+      remove.type = "button";
+      remove.className = "currency-recent-remove";
+      remove.dataset.removeCurrencyRecentIndex = String(index);
+      remove.textContent = "×";
+      remove.setAttribute("aria-label", `Remove recent conversion ${entry.amount} ${entry.from} to ${entry.to}`);
+      item.append(apply, remove);
+      recentList.append(item);
+    });
+  }
+
+  function saveRecentConversion() {
+    const value = Number(amount.value);
+    if (
+      !Number.isFinite(value)
+      || value < 0
+      || !result.textContent
+      || result.textContent === "—"
+    ) return;
+    const entry = {
+      from: from.value,
+      to: to.value,
+      amount: String(amount.value),
+      result: result.textContent
+    };
+    recent = recent.filter((item) => !(
+      pairKey(item) === pairKey(entry) && item.amount === entry.amount
+    ));
+    recent.unshift(entry);
+    recent = recent.slice(0, 8);
+    localStorage.setItem(recentKey, JSON.stringify(recent));
+    renderCurrencyRecent();
+  }
 
   function readSavedLiveRates() {
     try {
@@ -276,6 +387,7 @@ async function initializeCurrency() {
     if (!Number.isFinite(value) || value < 0 || !Number.isFinite(value / rates[from.value] * rates[to.value])) return;
 
     const conversion = `${formatResult(value)} ${from.value} = ${result.textContent} ${to.value}`;
+    saveRecentConversion();
     try {
       if (!navigator.clipboard?.writeText) throw new Error("Clipboard access is unavailable.");
       await navigator.clipboard.writeText(conversion);
@@ -300,6 +412,94 @@ async function initializeCurrency() {
     }
     convert();
   });
+  savePairButton.addEventListener("click", () => {
+    const pair = { from: from.value, to: to.value };
+    if (favorites.some((item) => pairKey(item) === pairKey(pair))) {
+      showToast("This currency pair is already saved.");
+      return;
+    }
+    if (favorites.length >= 8) {
+      showToast("You can save up to 8 currency pairs.");
+      return;
+    }
+    favorites.push(pair);
+    localStorage.setItem(favoritesKey, JSON.stringify(favorites));
+    renderCurrencyFavorites();
+    showToast("Currency pair saved.");
+  });
+  favoritesList.addEventListener("click", (event) => {
+    const removeButton = event.target.closest("[data-remove-currency-favorite-index]");
+    if (removeButton) {
+      const index = Number(removeButton.dataset.removeCurrencyFavoriteIndex);
+      const removed = favorites[index];
+      if (!removed) return;
+      favorites.splice(index, 1);
+      localStorage.setItem(favoritesKey, JSON.stringify(favorites));
+      renderCurrencyFavorites();
+      showToast("Saved pair removed.", {
+        label: "Undo",
+        onClick: () => {
+          favorites.splice(Math.min(index, favorites.length), 0, removed);
+          localStorage.setItem(favoritesKey, JSON.stringify(favorites));
+          renderCurrencyFavorites();
+          showToast("Saved pair restored.");
+        }
+      });
+      return;
+    }
+    const applyButton = event.target.closest("[data-currency-favorite-index]");
+    if (!applyButton) return;
+    const pair = favorites[Number(applyButton.dataset.currencyFavoriteIndex)];
+    if (!pair) return;
+    from.value = pair.from;
+    to.value = pair.to;
+    convert();
+  });
+  recentList.addEventListener("click", (event) => {
+    const removeButton = event.target.closest("[data-remove-currency-recent-index]");
+    if (removeButton) {
+      const index = Number(removeButton.dataset.removeCurrencyRecentIndex);
+      const removed = recent[index];
+      if (!removed) return;
+      recent.splice(index, 1);
+      localStorage.setItem(recentKey, JSON.stringify(recent));
+      renderCurrencyRecent();
+      showToast("Recent conversion removed.", {
+        label: "Undo",
+        onClick: () => {
+          recent.splice(Math.min(index, recent.length), 0, removed);
+          localStorage.setItem(recentKey, JSON.stringify(recent));
+          renderCurrencyRecent();
+          showToast("Recent conversion restored.");
+        }
+      });
+      return;
+    }
+    const applyButton = event.target.closest("[data-currency-recent-index]");
+    if (!applyButton) return;
+    const entry = recent[Number(applyButton.dataset.currencyRecentIndex)];
+    if (!entry) return;
+    from.value = entry.from;
+    to.value = entry.to;
+    amount.value = entry.amount;
+    convert();
+  });
+  clearRecentButton.addEventListener("click", () => {
+    if (!recent.length) return;
+    const previous = [...recent];
+    recent = [];
+    localStorage.removeItem(recentKey);
+    renderCurrencyRecent();
+    showToast("Recent conversions cleared.", {
+      label: "Undo",
+      onClick: () => {
+        recent = previous;
+        localStorage.setItem(recentKey, JSON.stringify(recent));
+        renderCurrencyRecent();
+        showToast("Recent conversions restored.");
+      }
+    });
+  });
   modal.querySelectorAll("[data-close-currency]").forEach((element) => {
     element.addEventListener("click", close);
   });
@@ -307,6 +507,8 @@ async function initializeCurrency() {
     if (!modal.hidden && event.key === "Escape") close();
   });
 
+  renderCurrencyFavorites();
+  renderCurrencyRecent();
   convert();
 }
 

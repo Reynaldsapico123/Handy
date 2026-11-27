@@ -530,6 +530,11 @@ async function run() {
     await page.waitForFunction(() =>
       document.querySelector("#currencyStatus").textContent === "Live rates unavailable · Using reference rates · Tap Refresh to retry"
     );
+    await page.click("#currencySavePair");
+    assert.strictEqual(await page.locator("#currencyFavorites .currency-favorite").count(), 1);
+    await page.click("#currencyCopyResult");
+    await page.waitForFunction(() => window.copiedCurrencyConversion?.includes("USD"));
+    assert.strictEqual(await page.locator("#currencyRecentList .currency-recent-item").count(), 1);
     await page.keyboard.press("Escape");
     forceCurrencyOffline = false;
 

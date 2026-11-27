@@ -44,6 +44,8 @@ const backupKeys = [
   "handy-theme",
   "handy-currency-pair",
   "handy-currency-live-rates",
+  "handy-currency-favorites",
+  "handy-currency-recent",
   "handy-world-clock",
   "handy-world-clock-meeting",
   "handy-unit-converter",
@@ -3065,6 +3067,48 @@ function validateBackupData(data) {
         || [...currencyCodes].some((code) => !Number.isFinite(value.rates[code]) || value.rates[code] <= 0)
       ) throw new Error("Backup currency rates are invalid.");
       validated[key] = { rates: { ...value.rates, USD: 1 }, updatedAt: value.updatedAt };
+    } else if (key === "handy-currency-favorites") {
+      if (!Array.isArray(value) || value.length > 8) {
+        throw new Error("Backup currency favorites are invalid.");
+      }
+      const favorites = [];
+      const seen = new Set();
+      for (const pair of value) {
+        if (
+          !isBackupRecord(pair)
+          || !currencyCodes.has(pair.from)
+          || !currencyCodes.has(pair.to)
+        ) throw new Error("Backup currency favorites are invalid.");
+        const pairKey = `${pair.from}:${pair.to}`;
+        if (!seen.has(pairKey)) {
+          seen.add(pairKey);
+          favorites.push({ from: pair.from, to: pair.to });
+        }
+      }
+      validated[key] = favorites;
+    } else if (key === "handy-currency-recent") {
+      if (!Array.isArray(value) || value.length > 8) {
+        throw new Error("Backup recent currency conversions are invalid.");
+      }
+      const recent = [];
+      for (const entry of value) {
+        if (
+          !isBackupRecord(entry)
+          || !currencyCodes.has(entry.from)
+          || !currencyCodes.has(entry.to)
+          || typeof entry.amount !== "string"
+          || entry.amount.length > 64
+          || typeof entry.result !== "string"
+          || entry.result.length > 64
+        ) throw new Error("Backup recent currency conversions are invalid.");
+        recent.push({
+          from: entry.from,
+          to: entry.to,
+          amount: entry.amount,
+          result: entry.result
+        });
+      }
+      validated[key] = recent;
     } else if (key === "handy-world-clock") {
       if (!Array.isArray(value) || value.length < 1 || value.length > 12) {
         throw new Error("Backup world clock preferences are invalid.");

@@ -34,5 +34,21 @@
         <span aria-hidden="true">↻</span> Refresh rates
       </button>
     </div>
+    <section class="currency-shortcuts" aria-labelledby="currencyShortcutsTitle">
+      <div class="currency-shortcuts-heading">
+        <h3 id="currencyShortcutsTitle">Saved pairs</h3>
+        <button type="button" id="currencySavePair" class="currency-save-pair">Save pair</button>
+      </div>
+      <p class="currency-shortcuts-empty" id="currencyFavoritesEmpty">No saved pairs yet.</p>
+      <div class="currency-favorites" id="currencyFavorites"></div>
+    </section>
+    <section class="currency-recent" aria-labelledby="currencyRecentTitle">
+      <div class="currency-recent-heading">
+        <h3 id="currencyRecentTitle">Recent conversions</h3>
+        <button type="button" id="currencyClearRecent" class="currency-clear-recent" disabled>Clear</button>
+      </div>
+      <p class="currency-recent-empty" id="currencyRecentEmpty">No recent conversions yet.</p>
+      <div class="currency-recent-list" id="currencyRecentList"></div>
+    </section>
   </section>
 </div>
