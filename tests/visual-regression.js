@@ -134,12 +134,29 @@ async function capture(page, name, selector, captureSize) {
   };
   let buffer;
   if (selector && captureSize) {
-    const box = await page.locator(selector).boundingBox();
-    if (!box) throw new Error(`Could not locate visual capture target: ${selector}`);
-    buffer = await page.screenshot({
-      ...screenshotOptions,
-      clip: { x: box.x, y: box.y, ...captureSize }
-    });
+    const locator = page.locator(selector);
+    const originalStyles = await locator.evaluate((element) =>
+      ["width", "height", "box-sizing"].map((property) => ({
+        property,
+        value: element.style.getPropertyValue(property),
+        priority: element.style.getPropertyPriority(property)
+      }))
+    );
+    await locator.evaluate((element, size) => {
+      element.style.setProperty("width", `${size.width}px`, "important");
+      element.style.setProperty("height", `${size.height}px`, "important");
+      element.style.setProperty("box-sizing", "border-box", "important");
+    }, captureSize);
+    try {
+      buffer = await locator.screenshot(screenshotOptions);
+    } finally {
+      await locator.evaluate((element, styles) => {
+        styles.forEach(({ property, value, priority }) => {
+          if (value) element.style.setProperty(property, value, priority);
+          else element.style.removeProperty(property);
+        });
+      }, originalStyles);
+    }
   } else {
     buffer = selector
       ? await page.locator(selector).screenshot(screenshotOptions)
