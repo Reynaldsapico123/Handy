@@ -544,11 +544,23 @@ async function run() {
     await page.keyboard.press("Escape");
     forceCurrencyOffline = false;
 
+    await page.evaluate(() => {
+      localStorage.setItem("handy-qr-scan-history", JSON.stringify(
+        Array.from({ length: 11 }, (_, index) => ({
+          value: `https://history-${index}.example`,
+          scannedAt: Date.now() - index * 1000
+        }))
+      ));
+    });
     await page.getByRole("button", { name: "Scan QR code" }).click();
     await page.waitForSelector("#qrModal:not([hidden])");
     assert(requestedToolScripts.has("/qr-code.js"));
     assert(requestedToolScripts.has("/node_modules/qrcode-generator/dist/qrcode.js"));
     assert(requestedToolScripts.has("/node_modules/jsqr/dist/jsQR.js"));
+    assert.strictEqual(await page.locator("#qrScanHistoryList li").count(), 10);
+    for (const selector of ["#qrCameraSwitch", "#qrFlashlightToggle", "#qrCameraStop"]) {
+      assert.strictEqual(await page.locator(selector).isVisible(), false);
+    }
     await page.locator("#qrImageInput").setInputFiles({
       name: "broken.png",
       mimeType: "image/png",
@@ -563,6 +575,7 @@ async function run() {
     assert.match(await page.evaluate(() => window.copiedToolLink), /[?&]tool=qr&mode=scan/);
     assert(await page.locator("#qrScanner").evaluate((scanner) => !scanner.hidden));
     assert(await page.locator("#qrCreator").evaluate((creator) => creator.hidden));
+    assert.strictEqual(await page.locator("#qrCreator").isVisible(), false);
     assert.strictEqual(await page.locator("#qrScanTab").getAttribute("aria-selected"), "true");
     await page.keyboard.press("Escape");
 
@@ -588,6 +601,11 @@ async function run() {
     assert.strictEqual(await page.locator("#qrScanStatus").textContent(), "QR code scanned successfully.");
     assert(await page.locator("#qrScanOpen").isVisible());
     assert.strictEqual(await page.evaluate(() => sessionStorage.getItem("handy-last-qr-result")), "https://scan-test.example");
+    const savedQrHistory = await page.evaluate(() =>
+      JSON.parse(localStorage.getItem("handy-qr-scan-history"))
+    );
+    assert.strictEqual(savedQrHistory.length, 10);
+    assert.strictEqual(savedQrHistory[0].value, "https://scan-test.example");
     await page.evaluate(() => {
       window.openedQrUrl = null;
       window.open = (url) => { window.openedQrUrl = url; };
@@ -596,6 +614,31 @@ async function run() {
     assert.strictEqual(await page.evaluate(() => window.openedQrUrl), "https://scan-test.example/");
     await page.click("#qrScanCopy");
     await page.waitForFunction(() => window.copiedToolLink === "https://scan-test.example");
+    await page.reload({ waitUntil: "networkidle" });
+    if (!await page.locator("#qrModal:not([hidden])").count()) {
+      await page.getByRole("button", { name: "Open QR Code Maker" }).click();
+      await page.waitForSelector("#qrModal:not([hidden])");
+    }
+    if (await page.locator("#qrScanTab").getAttribute("aria-selected") !== "true") {
+      await page.click("#qrScanTab");
+    }
+    assert.strictEqual(await page.locator("#qrScanHistoryList li").count(), 10);
+    assert.strictEqual(
+      await page.locator("#qrScanHistoryList li").first().locator(".qr-scan-history-value").textContent(),
+      "https://scan-test.example"
+    );
+    await page.locator("#qrScanHistoryList li").first().getByRole("button", { name: "Copy scan 1" }).click();
+    await page.waitForFunction(() => window.copiedToolLink === "https://scan-test.example");
+    await page.locator("#qrScanHistoryList li").first().getByRole("button", { name: "Delete scan 1" }).click();
+    assert.strictEqual(await page.locator("#qrScanHistoryList li").count(), 9);
+    assert.strictEqual(
+      await page.locator("#qrScanHistoryList li").first().locator(".qr-scan-history-value").textContent(),
+      "https://history-0.example"
+    );
+    await page.click("#qrScanHistoryClear");
+    assert.strictEqual(await page.locator("#qrScanHistoryList li").count(), 0);
+    assert.strictEqual(await page.locator("#qrScanHistoryEmpty").textContent(), "No saved scans yet.");
+    assert.strictEqual(await page.evaluate(() => localStorage.getItem("handy-qr-scan-history")), null);
     await page.evaluate(() => {
       window.requestedCameraModes = [];
       window.requestedTorchValues = [];

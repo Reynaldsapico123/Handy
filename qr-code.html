@@ -69,6 +69,16 @@
           <button type="button" id="qrScanOpen" class="qr-secondary" hidden>Open link</button>
         </div>
       </div>
+      <section class="qr-scan-history" id="qrScanHistory" aria-labelledby="qrScanHistoryTitle">
+        <div class="qr-scan-history-header">
+          <h3 id="qrScanHistoryTitle">Recent scans</h3>
+          <button type="button" id="qrScanHistoryClear" class="qr-secondary" disabled>Clear history</button>
+        </div>
+        <p class="qr-scan-history-help">Saved on this device only. The 10 most recent scans are kept.</p>
+        <p class="qr-scan-history-empty" id="qrScanHistoryEmpty">No saved scans yet.</p>
+        <ol id="qrScanHistoryList"></ol>
+        <p class="qr-scan-history-status" id="qrScanHistoryStatus" role="status" aria-live="polite"></p>
+      </section>
     </section>
   </section>
 </div>

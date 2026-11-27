@@ -3170,11 +3170,13 @@ clearLocalDataButton.addEventListener("click", () => {
       ...backupKeys,
       "handy-calculator-history",
       "handy-qr-settings",
+      "handy-qr-scan-history",
       recentSearchesKey,
       personalizationPresetKey,
       feedbackDraftKey
     ];
     handyKeys.forEach((key) => localStorage.removeItem(key));
+    sessionStorage.removeItem("handy-last-qr-result");
     privacyStatus.textContent = "Handy local data cleared. Reloading…";
     showToast("Handy local data cleared.");
     setTimeout(() => window.location.reload(), 500);

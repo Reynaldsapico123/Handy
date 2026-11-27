@@ -15,6 +15,10 @@ async function initializeQrCode() {
   const scanStatus = document.querySelector("#qrScanStatus");
   const scanResult = document.querySelector("#qrScanResult");
   const scanText = document.querySelector("#qrScanText");
+  const scanHistoryList = document.querySelector("#qrScanHistoryList");
+  const scanHistoryEmpty = document.querySelector("#qrScanHistoryEmpty");
+  const scanHistoryStatus = document.querySelector("#qrScanHistoryStatus");
+  const scanHistoryClear = document.querySelector("#qrScanHistoryClear");
   const scanCanvas = document.querySelector("#qrScanCanvas");
   const scanRetry = document.querySelector("#qrScanRetry");
   const scanOpen = document.querySelector("#qrScanOpen");
@@ -32,6 +36,8 @@ async function initializeQrCode() {
   let cameraFacingMode = "environment";
   let flashlightEnabled = false;
   let lastScanAction = "image";
+  let scanHistory = [];
+  const scanHistoryKey = "handy-qr-scan-history";
   const savedQr = JSON.parse(localStorage.getItem("handy-qr-settings") || "null");
   if (savedQr) {
     text.value = savedQr.text || text.value;
@@ -128,6 +134,127 @@ async function initializeQrCode() {
     if (isError) scanRetry.setAttribute("aria-label", "Try again, retry QR scan");
   }
 
+  function persistScanHistory(nextHistory) {
+    try {
+      localStorage.setItem(scanHistoryKey, JSON.stringify(nextHistory));
+      return true;
+    } catch (error) {
+      console.error("Could not save QR scan history.", error);
+      scanHistoryStatus.textContent = "Could not save scan history on this device.";
+      return false;
+    }
+  }
+
+  function renderScanHistory() {
+    scanHistoryList.replaceChildren(...scanHistory.map((entry, index) => {
+      const item = document.createElement("li");
+      item.className = "qr-scan-history-item";
+      item.dataset.historyIndex = String(index);
+
+      const value = document.createElement("p");
+      value.className = "qr-scan-history-value";
+      value.textContent = entry.value;
+
+      const timestamp = document.createElement("time");
+      const scannedAt = new Date(entry.scannedAt);
+      timestamp.dateTime = scannedAt.toISOString();
+      timestamp.textContent = scannedAt.toLocaleString();
+
+      const actions = document.createElement("div");
+      actions.className = "qr-scan-history-actions";
+      const copyButton = document.createElement("button");
+      copyButton.type = "button";
+      copyButton.className = "qr-secondary";
+      copyButton.dataset.historyAction = "copy";
+      copyButton.setAttribute("aria-label", `Copy scan ${index + 1}`);
+      copyButton.textContent = "Copy";
+      const deleteButton = document.createElement("button");
+      deleteButton.type = "button";
+      deleteButton.className = "qr-secondary";
+      deleteButton.dataset.historyAction = "delete";
+      deleteButton.setAttribute("aria-label", `Delete scan ${index + 1}`);
+      deleteButton.textContent = "Delete";
+      actions.append(copyButton, deleteButton);
+      item.append(value, timestamp, actions);
+      return item;
+    }));
+    scanHistoryEmpty.hidden = scanHistory.length > 0;
+    scanHistoryClear.disabled = scanHistory.length === 0;
+  }
+
+  function loadScanHistory() {
+    try {
+      const storedHistory = JSON.parse(localStorage.getItem(scanHistoryKey) || "[]");
+      if (!Array.isArray(storedHistory)) throw new Error("Saved QR scan history is not a list.");
+      const validHistory = storedHistory.filter((entry) =>
+        entry
+        && typeof entry.value === "string"
+        && Number.isFinite(entry.scannedAt)
+        && Number.isFinite(new Date(entry.scannedAt).getTime())
+      );
+      scanHistory = validHistory.slice(0, 10);
+      if (scanHistory.length !== storedHistory.length) {
+        if (persistScanHistory(scanHistory)) {
+          scanHistoryStatus.textContent = "Showing the 10 most recent valid scans.";
+        }
+      }
+    } catch (error) {
+      console.error("Could not load QR scan history.", error);
+      scanHistoryStatus.textContent = "Could not load saved scan history.";
+    }
+    renderScanHistory();
+  }
+
+  function addScanToHistory(value) {
+    const nextHistory = [{ value, scannedAt: Date.now() }, ...scanHistory].slice(0, 10);
+    if (!persistScanHistory(nextHistory)) return;
+    scanHistory = nextHistory;
+    renderScanHistory();
+    scanHistoryStatus.textContent = "Scan saved on this device.";
+  }
+
+  scanHistoryList.addEventListener("click", async (event) => {
+    const button = event.target.closest("button[data-history-action]");
+    const item = button?.closest("li[data-history-index]");
+    if (!button || !item) return;
+    const index = Number(item.dataset.historyIndex);
+    const entry = scanHistory[index];
+    if (!entry) return;
+
+    if (button.dataset.historyAction === "copy") {
+      try {
+        await navigator.clipboard.writeText(entry.value);
+        scanHistoryStatus.textContent = `Scan ${index + 1} copied.`;
+      } catch (error) {
+        console.error("Could not copy a saved QR scan.", error);
+        scanHistoryStatus.textContent = "Could not copy this saved scan.";
+      }
+      return;
+    }
+
+    if (button.dataset.historyAction === "delete") {
+      const nextHistory = scanHistory.filter((_, historyIndex) => historyIndex !== index);
+      if (!persistScanHistory(nextHistory)) return;
+      scanHistory = nextHistory;
+      renderScanHistory();
+      scanHistoryStatus.textContent = "Scan deleted from this device.";
+    }
+  });
+
+  scanHistoryClear.addEventListener("click", () => {
+    try {
+      localStorage.removeItem(scanHistoryKey);
+      scanHistory = [];
+      renderScanHistory();
+      scanHistoryStatus.textContent = "Scan history cleared from this device.";
+    } catch (error) {
+      console.error("Could not clear QR scan history.", error);
+      scanHistoryStatus.textContent = "Could not clear saved scan history.";
+    }
+  });
+
+  loadScanHistory();
+
   scanRetry.addEventListener("click", () => {
     if (lastScanAction === "camera") {
       cameraStart.click();
@@ -138,6 +265,7 @@ async function initializeQrCode() {
 
   function displayScanResult(value) {
     scanText.textContent = value;
+    addScanToHistory(value);
     try {
       sessionStorage.setItem("handy-last-qr-result", value);
     } catch (error) {

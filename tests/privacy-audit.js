@@ -66,6 +66,10 @@ async function run() {
         localStorage.setItem("handy-qr-settings", JSON.stringify({
           text: "private QR text"
         }));
+        localStorage.setItem("handy-qr-scan-history", JSON.stringify([
+          { value: "private scanned QR content", scannedAt: Date.now() }
+        ]));
+        sessionStorage.setItem("handy-last-qr-result", "private session QR result");
         localStorage.setItem("unrelated-app-setting", "keep");
       }
     });
@@ -87,11 +91,15 @@ async function run() {
     const clearedStorage = await page.evaluate(() => ({
       calculatorHistory: localStorage.getItem("handy-calculator-history"),
       qrSettings: localStorage.getItem("handy-qr-settings"),
+      qrScanHistory: localStorage.getItem("handy-qr-scan-history"),
+      lastQrResult: sessionStorage.getItem("handy-last-qr-result"),
       theme: localStorage.getItem("handy-theme"),
       unrelated: localStorage.getItem("unrelated-app-setting")
     }));
     assert.strictEqual(clearedStorage.calculatorHistory, null);
     assert.strictEqual(clearedStorage.qrSettings, null);
+    assert.strictEqual(clearedStorage.qrScanHistory, null);
+    assert.strictEqual(clearedStorage.lastQrResult, null);
     assert.strictEqual(clearedStorage.theme, null);
     assert.strictEqual(clearedStorage.unrelated, "keep");
 
@@ -104,6 +112,9 @@ async function run() {
       localStorage.setItem("handy-qr-settings", JSON.stringify({
         text: "private QR text"
       }));
+      localStorage.setItem("handy-qr-scan-history", JSON.stringify([
+        { value: "private scanned QR content", scannedAt: Date.now() }
+      ]));
     });
 
     const downloadPromise = page.waitForEvent("download");
@@ -116,6 +127,7 @@ async function run() {
     assert.strictEqual(backup.version, 1);
     assert(!Object.prototype.hasOwnProperty.call(backup.data, "handy-calculator-history"));
     assert(!Object.prototype.hasOwnProperty.call(backup.data, "handy-qr-settings"));
+    assert(!Object.prototype.hasOwnProperty.call(backup.data, "handy-qr-scan-history"));
     assert.deepStrictEqual(backup.data["handy-favorite-tools"], ["QR Code Maker"]);
 
     console.log("Privacy audit passed: no third-party requests or cookies; sensitive local data is excluded from backups and cleared safely.");

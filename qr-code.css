@@ -43,6 +43,7 @@
 .qr-tab.active { color: var(--accent); background: var(--surface); box-shadow: 0 2px 8px rgba(38, 42, 65, 0.08); }
 body.dark .qr-tab.active { color: #c6baff; }
 .qr-scanner[hidden] { display: none; }
+.qr-content[hidden] { display: none; }
 .qr-scan-help { margin: 0 0 14px; color: var(--muted); font-size: 13px; line-height: 1.5; }
 .qr-scan-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .qr-upload-button,
@@ -60,6 +61,8 @@ body.dark .qr-tab.active { color: #c6baff; }
   font-weight: 800;
   cursor: pointer;
 }
+.qr-scan-actions button[hidden],
+.qr-scan-result button[hidden] { display: none; }
 .qr-upload-button { border-color: var(--accent); color: white; background: var(--accent); }
 #qrImageInput { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); }
 .qr-camera-frame {
@@ -131,6 +134,55 @@ body.dark .qr-tab.active { color: #c6baff; }
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+}
+.qr-scan-history {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+.qr-scan-history-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.qr-scan-history-header h3 { margin: 0; font-size: 14px; }
+.qr-scan-history-header button {
+  min-height: 36px;
+  padding: 0 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 700;
+}
+.qr-scan-history-header button:disabled { opacity: 0.55; cursor: not-allowed; }
+.qr-scan-history-help,
+.qr-scan-history-empty,
+.qr-scan-history-status { margin: 7px 0; color: var(--muted); font-size: 12px; }
+.qr-scan-history ol {
+  display: grid;
+  gap: 8px;
+  max-height: 240px;
+  overflow-y: auto;
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.qr-scan-history-item {
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+}
+.qr-scan-history-value { margin: 0 0 5px; overflow-wrap: anywhere; color: var(--text); font-size: 13px; }
+.qr-scan-history-item time { display: block; margin-bottom: 8px; color: var(--muted); font-size: 11px; }
+.qr-scan-history-actions { display: flex; flex-wrap: wrap; gap: 7px; }
+.qr-scan-history-actions button {
+  min-height: 36px;
+  padding: 0 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 700;
 }
 .qr-content {
   display: grid;
