@@ -683,6 +683,16 @@ async function run() {
       await page.locator("#qrScanHistoryList li").first().locator(".qr-scan-history-value").textContent(),
       "https://history-0.example"
     );
+    await page.fill("#qrScanHistorySearch", "history-7");
+    assert.strictEqual(await page.locator("#qrScanHistoryList li").count(), 1);
+    assert.strictEqual(await page.locator("#qrScanHistoryCopyAll").isDisabled(), false);
+    assert.strictEqual(await page.locator("#qrScanHistoryExport").isDisabled(), false);
+    const scanHistoryDownload = page.waitForEvent("download");
+    await page.click("#qrScanHistoryExport");
+    assert.strictEqual((await scanHistoryDownload).suggestedFilename(), "handy-qr-scan-history.csv");
+    await page.click("#qrScanHistoryCopyAll");
+    await page.waitForFunction(() => window.copiedToolLink === "https://history-7.example");
+    await page.fill("#qrScanHistorySearch", "");
     await page.click("#qrScanHistoryClear");
     assert.strictEqual(await page.locator("#qrScanHistoryList li").count(), 0);
     assert.strictEqual(await page.locator("#qrScanHistoryEmpty").textContent(), "No saved scans yet.");

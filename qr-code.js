@@ -19,6 +19,9 @@ async function initializeQrCode() {
   const scanHistoryEmpty = document.querySelector("#qrScanHistoryEmpty");
   const scanHistoryStatus = document.querySelector("#qrScanHistoryStatus");
   const scanHistoryClear = document.querySelector("#qrScanHistoryClear");
+  const scanHistorySearch = document.querySelector("#qrScanHistorySearch");
+  const scanHistoryCopyAll = document.querySelector("#qrScanHistoryCopyAll");
+  const scanHistoryExport = document.querySelector("#qrScanHistoryExport");
   const scanCanvas = document.querySelector("#qrScanCanvas");
   const scanRetry = document.querySelector("#qrScanRetry");
   const scanOpen = document.querySelector("#qrScanOpen");
@@ -146,7 +149,16 @@ async function initializeQrCode() {
   }
 
   function renderScanHistory() {
-    scanHistoryList.replaceChildren(...scanHistory.map((entry, index) => {
+    const query = scanHistorySearch.value.trim().toLowerCase();
+    const visibleEntries = scanHistory
+      .map((entry, index) => ({ entry, index }))
+      .filter(({ entry }) =>
+        !query
+        || entry.value.toLowerCase().includes(query)
+        || new Date(entry.scannedAt).toLocaleString().toLowerCase().includes(query)
+      );
+
+    scanHistoryList.replaceChildren(...visibleEntries.map(({ entry, index }) => {
       const item = document.createElement("li");
       item.className = "qr-scan-history-item";
       item.dataset.historyIndex = String(index);
@@ -178,8 +190,45 @@ async function initializeQrCode() {
       item.append(value, timestamp, actions);
       return item;
     }));
-    scanHistoryEmpty.hidden = scanHistory.length > 0;
+    scanHistoryEmpty.hidden = visibleEntries.length > 0;
+    scanHistoryEmpty.textContent = scanHistory.length
+      ? "No saved scans match your search."
+      : "No saved scans yet.";
     scanHistoryClear.disabled = scanHistory.length === 0;
+    scanHistoryCopyAll.disabled = visibleEntries.length === 0;
+    scanHistoryExport.disabled = visibleEntries.length === 0;
+  }
+
+  function getFilteredScanHistory() {
+    const query = scanHistorySearch.value.trim().toLowerCase();
+    if (!query) return [...scanHistory];
+    return scanHistory.filter((entry) =>
+      entry.value.toLowerCase().includes(query)
+      || new Date(entry.scannedAt).toLocaleString().toLowerCase().includes(query)
+    );
+  }
+
+  function escapeCsvValue(value) {
+    let text = String(value ?? "");
+    if (/^[=+\-@]/.test(text)) text = `'${text}`;
+    return `"${text.replace(/"/g, '""')}"`;
+  }
+
+  function downloadScanHistoryCsv(entries) {
+    const rows = [
+      ["Scanned content", "Scanned at"],
+      ...entries.map((entry) => [entry.value, new Date(entry.scannedAt).toISOString()])
+    ];
+    const csv = `\ufeff${rows.map((row) => row.map(escapeCsvValue).join(",")).join("\r\n")}\r\n`;
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.download = "handy-qr-scan-history.csv";
+    link.href = url;
+    document.body.append(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 0);
   }
 
   function loadScanHistory() {
@@ -245,11 +294,40 @@ async function initializeQrCode() {
     try {
       localStorage.removeItem(scanHistoryKey);
       scanHistory = [];
+      scanHistorySearch.value = "";
       renderScanHistory();
       scanHistoryStatus.textContent = "Scan history cleared from this device.";
     } catch (error) {
       console.error("Could not clear QR scan history.", error);
       scanHistoryStatus.textContent = "Could not clear saved scan history.";
+    }
+  });
+
+  scanHistorySearch.addEventListener("input", renderScanHistory);
+
+  scanHistoryCopyAll.addEventListener("click", async () => {
+    const entries = getFilteredScanHistory();
+    if (!entries.length) return;
+    try {
+      await navigator.clipboard.writeText(entries.map((entry) => entry.value).join("\n"));
+      scanHistoryStatus.textContent =
+        `Copied ${entries.length} saved scan${entries.length === 1 ? "" : "s"} as text.`;
+    } catch (error) {
+      console.error("Could not copy QR scan history.", error);
+      scanHistoryStatus.textContent = "Could not copy scan history.";
+    }
+  });
+
+  scanHistoryExport.addEventListener("click", () => {
+    const entries = getFilteredScanHistory();
+    if (!entries.length) return;
+    try {
+      downloadScanHistoryCsv(entries);
+      scanHistoryStatus.textContent =
+        `Exported ${entries.length} saved scan${entries.length === 1 ? "" : "s"} as CSV.`;
+    } catch (error) {
+      console.error("Could not export QR scan history.", error);
+      scanHistoryStatus.textContent = "Could not export scan history.";
     }
   });
 
