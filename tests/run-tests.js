@@ -263,6 +263,9 @@ async function run() {
       localStorage.setItem("handy-recent-searches", JSON.stringify(["timer"]));
       localStorage.setItem("handy-recent-tools", JSON.stringify(["Calculator"]));
     });
+    await page.reload({ waitUntil: "networkidle" });
+    assert.strictEqual(await page.locator("#insightTopTool").textContent(), "Calculator");
+    assert.match(await page.locator("#insightTopToolDetail").textContent(), /3 opens/);
     page.once("dialog", (dialog) => dialog.accept());
     await page.click("#resetPersonalization");
     await page.waitForFunction(() =>

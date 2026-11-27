@@ -43,7 +43,7 @@ const targets = [
   { name: "guides", trigger: ".learn-link", modal: "#guidesModal" }
 ];
 
-if (targetFilter && !targets.some((target) => target.name === targetFilter)) {
+if (targetFilter && targetFilter !== "homepage" && !targets.some((target) => target.name === targetFilter)) {
   throw new Error(`Unknown visual target: ${targetFilter}`);
 }
 
@@ -206,7 +206,9 @@ async function run() {
       for (const theme of ["light", "dark"]) {
         await page.goto(`http://127.0.0.1:${server.address().port}/`, { waitUntil: "networkidle" });
         await setTheme(page, theme);
-        if (!targetFilter) await capture(page, `homepage-${viewport.name}-${theme}`);
+        if (!targetFilter || targetFilter === "homepage") {
+          await capture(page, `homepage-${viewport.name}-${theme}`);
+        }
 
         for (const target of targets) {
           if (targetFilter && target.name !== targetFilter) continue;

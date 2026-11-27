@@ -530,6 +530,41 @@ body.dark .offline-notice button {
   align-items: center;
   gap: 4px;
 }
+.dashboard-insights {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.dashboard-insight {
+  min-width: 0;
+  min-height: 92px;
+  padding: 12px 14px;
+  display: grid;
+  align-content: center;
+  gap: 4px;
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  background: var(--surface);
+}
+.dashboard-insight-label {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.dashboard-insight strong {
+  overflow: hidden;
+  font-size: 14px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.dashboard-insight > span:last-child {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.35;
+}
 .personalization-presets {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -2192,6 +2227,7 @@ body.dark .connection-status[data-state="offline"] { color: #f3c27f; }
 
 @media (max-width: 900px) {
   .tool-grid { grid-template-columns: repeat(2, 1fr); }
+  .dashboard-insights { grid-template-columns: 1fr; }
   .travel-kit-panel { grid-template-columns: 1fr; }
   .travel-kit-manager { grid-template-columns: minmax(100px, 0.3fr) minmax(0, 1fr) auto; }
   .travel-kit-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); }

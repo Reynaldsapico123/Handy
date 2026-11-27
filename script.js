@@ -533,6 +533,8 @@ function saveFavoriteTools() {
     .map((card) => card.querySelector("h3").textContent);
   localStorage.setItem(favoritesKey, JSON.stringify(favorites));
   renderSavedTools();
+  renderDashboardInsights();
+  renderDashboardInsights();
 }
 
 function saveRecentTool(name) {
@@ -613,6 +615,7 @@ function updatePersonalizationPresetUi() {
       ? `${preset[0].toUpperCase()}${preset.slice(1)} preset is active.`
       : "Using your custom layout.";
   }
+  if (typeof renderDashboardInsights === "function") renderDashboardInsights();
 }
 
 function applyPersonalizationPreset(presetName) {
@@ -666,6 +669,7 @@ function recordToolUsage(name) {
   const count = Number.isFinite(usage[name]) ? usage[name] : 0;
   usage[name] = count + 1;
   localStorage.setItem(toolUsageKey, JSON.stringify(usage));
+  renderDashboardInsights();
 }
 
 function renderToolCustomizer() {
@@ -762,6 +766,62 @@ applyToolLayout();
 renderToolCustomizer();
 
 const savedToolsGrid = document.querySelector("#savedToolsGrid");
+
+function renderDashboardInsights() {
+  const topToolElement = document.querySelector("#insightTopTool");
+  const topToolDetail = document.querySelector("#insightTopToolDetail");
+  const tripCountElement = document.querySelector("#insightTripCount");
+  const tripDetailElement = document.querySelector("#insightTripDetail");
+  const presetElement = document.querySelector("#insightPreset");
+  const presetDetailElement = document.querySelector("#insightPresetDetail");
+  if (!topToolElement || !tripCountElement || !presetElement) return;
+
+  let usage = {};
+  try {
+    usage = JSON.parse(localStorage.getItem(toolUsageKey) || "{}") || {};
+  } catch {
+    usage = {};
+  }
+  const rankedTools = Object.entries(usage)
+    .filter(([name, count]) => toolLayoutKeySet.has(name) && Number.isInteger(count) && count > 0)
+    .sort(([, countA], [, countB]) => countB - countA);
+  if (rankedTools.length) {
+    const [[topName, topCount]] = rankedTools;
+    topToolElement.textContent = topName;
+    topToolDetail.textContent = `${topCount} open${topCount === 1 ? "" : "s"} recorded on this device`;
+  } else {
+    topToolElement.textContent = "Start exploring";
+    topToolDetail.textContent = "Open a tool to build your usage summary";
+  }
+
+  let tripCount = 0;
+  let nextTripName = "";
+  try {
+    const travelStore = JSON.parse(localStorage.getItem(travelKitStorageKey) || "null");
+    if (travelStore && Array.isArray(travelStore.trips)) {
+      tripCount = travelStore.trips.length;
+      nextTripName = travelStore.trips.find((trip) =>
+        typeof trip.name === "string" && trip.name.trim()
+      )?.name || "";
+    }
+  } catch {
+    tripCount = 0;
+  }
+  tripCountElement.textContent = `${tripCount} trip${tripCount === 1 ? "" : "s"} saved`;
+  tripDetailElement.textContent = nextTripName
+    ? `Latest kit: ${nextTripName}`
+    : "Your travel workspace is ready";
+
+  const preset = readPersonalizationPreset();
+  if (preset) {
+    const label = preset[0].toUpperCase() + preset.slice(1);
+    presetElement.textContent = `${label} mode`;
+    presetDetailElement.textContent = `${personalizationPresets[preset].length} tools in this preset`;
+  } else {
+    presetElement.textContent = "Custom layout";
+    presetDetailElement.textContent = "Choose a preset in Customize tools";
+  }
+}
 
 function renderSavedTools() {
   const favorites = readStoredList(favoritesKey);
@@ -868,6 +928,7 @@ document.querySelector("#resetPersonalization").addEventListener("click", () => 
 });
 
 renderSavedTools();
+renderDashboardInsights();
 
 const savedTheme = localStorage.getItem("handy-theme");
 if (savedTheme === "dark") {
@@ -1527,6 +1588,7 @@ function persistTravelKitStore(store) {
     localStorage.setItem(travelKitStorageKey, JSON.stringify(store));
     travelKitStore = store;
     travelKitLoadError = "";
+    if (typeof renderDashboardInsights === "function") renderDashboardInsights();
     return true;
   } catch (error) {
     console.error("Could not save Travel Kits on this device.", error);
