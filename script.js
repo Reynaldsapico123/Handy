@@ -24,6 +24,10 @@ const exportSettingsBackupButton = document.querySelector("#exportSettingsBackup
 const importSettingsBackupButton = document.querySelector("#importSettingsBackup");
 const settingsBackupFile = document.querySelector("#settingsBackupFile");
 const backupStatus = document.querySelector("#backupStatus");
+const backupPreview = document.querySelector("#backupPreview");
+const confirmBackupRestore = document.querySelector("#confirmBackupRestore");
+const cancelBackupRestore = document.querySelector("#cancelBackupRestore");
+let pendingBackupData = null;
 let selectedSuggestionIndex = -1;
 const favoritesKey = "handy-favorite-tools";
 const recentKey = "handy-recent-tools";
@@ -3367,17 +3371,57 @@ settingsBackupFile.addEventListener("change", async () => {
       || !Number.isFinite(Date.parse(backup.exportedAt))
     ) throw new Error("This is not a supported Handy backup.");
     const data = validateBackupData(backup.data);
-    if (!window.confirm("Restore these favorites and preferences? Calculator history and QR text will remain unchanged.")) {
-      backupStatus.textContent = "Restore canceled.";
-      return;
-    }
-    restoreSettingsBackup(data);
+    pendingBackupData = data;
+    document.querySelector("#backupPreviewDate").textContent =
+      new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" })
+        .format(new Date(backup.exportedAt));
+    document.querySelector("#backupPreviewFormat").textContent =
+      `Handy backup v${backup.version}`;
+    document.querySelector("#backupPreviewFavorites").textContent =
+      String(Array.isArray(data["handy-favorite-tools"]) ? data["handy-favorite-tools"].length : 0);
+    document.querySelector("#backupPreviewTrips").textContent =
+      String(data["handy-travel-kit"]?.trips?.length || 0);
+    document.querySelector("#backupPreviewWorldClock").textContent =
+      Array.isArray(data["handy-world-clock"]) ? `${data["handy-world-clock"].length} cities` : "None";
+    const preset = data["handy-personalization-preset"];
+    document.querySelector("#backupPreviewPreset").textContent =
+      preset ? `${preset[0].toUpperCase()}${preset.slice(1)} mode` : "Custom layout";
+    backupPreview.hidden = false;
+    confirmBackupRestore.disabled = false;
+    backupStatus.textContent = "Backup verified. Review the preview, then restore or cancel.";
+    backupPreview.scrollIntoView({ block: "nearest" });
+  } catch (error) {
+    pendingBackupData = null;
+    backupPreview.hidden = true;
+    confirmBackupRestore.disabled = true;
+    backupStatus.textContent = error instanceof Error ? error.message : "Backup could not be restored.";
+  }
+});
+
+confirmBackupRestore.addEventListener("click", () => {
+  if (!pendingBackupData) return;
+  if (!window.confirm("Restore the verified backup? Calculator history and QR text will remain unchanged.")) {
+    backupStatus.textContent = "Restore canceled.";
+    return;
+  }
+  try {
+    restoreSettingsBackup(pendingBackupData);
+    backupPreview.hidden = true;
+    confirmBackupRestore.disabled = true;
+    pendingBackupData = null;
     backupStatus.textContent = "Backup restored. Reloading to apply your settings…";
     showToast("Backup restored.");
     setTimeout(() => window.location.reload(), 500);
   } catch (error) {
     backupStatus.textContent = error instanceof Error ? error.message : "Backup could not be restored.";
   }
+});
+
+cancelBackupRestore.addEventListener("click", () => {
+  pendingBackupData = null;
+  backupPreview.hidden = true;
+  confirmBackupRestore.disabled = true;
+  backupStatus.textContent = "Restore canceled.";
 });
 
 const clearLocalDataButton = document.querySelector("#clearLocalData");

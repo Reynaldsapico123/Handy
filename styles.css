@@ -751,6 +751,55 @@ body.dark .offline-notice button {
 }
 .backup-actions button:hover { border-color: var(--accent); color: var(--accent-text); }
 .backup-settings .backup-status { min-height: 1em; margin-bottom: 0; }
+.backup-preview {
+  margin: 14px 0;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--bg);
+}
+.backup-preview h3 { margin: 0 0 10px; font-size: 14px; }
+.backup-preview-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0;
+}
+.backup-preview-list div {
+  min-width: 0;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--surface);
+}
+.backup-preview-list dt { color: var(--muted); font-size: 11px; }
+.backup-preview-list dd {
+  margin: 3px 0 0;
+  overflow-wrap: anywhere;
+  font-size: 12px;
+  font-weight: 700;
+}
+.backup-preview > p { margin: 10px 0; color: var(--muted); font-size: 12px; }
+.backup-preview-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.backup-preview-actions button {
+  min-height: 40px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.backup-preview-actions button:first-child {
+  border-color: var(--accent);
+  color: white;
+  background: var(--accent);
+}
+@media (max-width: 640px) {
+  .backup-preview-list { grid-template-columns: 1fr; }
+}
 .keyboard-shortcuts {
   margin-top: 12px;
   padding-top: 14px;

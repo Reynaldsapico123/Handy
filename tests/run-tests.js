@@ -1627,14 +1627,18 @@ async function run() {
     exportedBackup.data["handy-favorite-tools"] = ["QR Code Maker"];
     exportedBackup.data["handy-theme"] = "dark";
     exportedBackup.data["handy-currency-pair"] = { from: "EUR", to: "USD", amount: "25" };
+    await page.locator("#settingsBackupFile").setInputFiles({
+      name: "handy-settings.json",
+      mimeType: "application/json",
+      buffer: Buffer.from(JSON.stringify(exportedBackup))
+    });
+    await page.locator("#backupPreview").waitFor({ state: "visible" });
+    assert.strictEqual(await page.locator("#backupPreviewFavorites").textContent(), "1");
+    assert.strictEqual(await page.locator("#confirmBackupRestore").isEnabled(), true);
     page.once("dialog", (dialog) => dialog.accept());
     await Promise.all([
       page.waitForNavigation({ waitUntil: "load" }),
-      page.locator("#settingsBackupFile").setInputFiles({
-        name: "handy-settings.json",
-        mimeType: "application/json",
-        buffer: Buffer.from(JSON.stringify(exportedBackup))
-      })
+      page.locator("#confirmBackupRestore").click()
     ]);
     const restoredBackupState = await page.evaluate(() => ({
       favorites: JSON.parse(localStorage.getItem("handy-favorite-tools")),

@@ -533,6 +533,22 @@
           <button type="button" id="importSettingsBackup">Restore backup</button>
           <input id="settingsBackupFile" type="file" accept=".json,application/json" hidden>
         </div>
+        <section class="backup-preview" id="backupPreview" aria-labelledby="backupPreviewTitle" hidden>
+          <h3 id="backupPreviewTitle">Backup preview</h3>
+          <dl class="backup-preview-list">
+            <div><dt>Exported</dt><dd id="backupPreviewDate">—</dd></div>
+            <div><dt>Format</dt><dd id="backupPreviewFormat">—</dd></div>
+            <div><dt>Favorites</dt><dd id="backupPreviewFavorites">0</dd></div>
+            <div><dt>Saved trips</dt><dd id="backupPreviewTrips">0</dd></div>
+            <div><dt>World Clock</dt><dd id="backupPreviewWorldClock">None</dd></div>
+            <div><dt>Personal mode</dt><dd id="backupPreviewPreset">Custom layout</dd></div>
+          </dl>
+          <p>Calculator history and QR text are not included.</p>
+          <div class="backup-preview-actions">
+            <button type="button" id="confirmBackupRestore" disabled>Restore backup</button>
+            <button type="button" id="cancelBackupRestore">Cancel</button>
+          </div>
+        </section>
         <p class="backup-status" id="backupStatus" role="status" aria-live="polite"></p>
       </details>
       <details class="keyboard-shortcuts" id="keyboardShortcuts">

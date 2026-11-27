@@ -131,6 +131,8 @@ async function run() {
       mimeType: "application/json",
       buffer: Buffer.from(JSON.stringify(rollbackBackup))
     });
+    await page.locator("#backupPreview").waitFor({ state: "visible" });
+    await page.locator("#confirmBackupRestore").click();
     await page.getByText("Simulated storage failure").waitFor();
     await page.evaluate(() => {
       Storage.prototype.setItem = window.resilienceOriginalSetItem;
