@@ -940,11 +940,14 @@ if (savedTheme === "dark") {
   themeToggle.setAttribute("aria-label", "Switch to light mode");
 }
 
-themeToggle.addEventListener("click", () => {
+function toggleTheme() {
   const isDark = document.body.classList.toggle("dark");
   localStorage.setItem("handy-theme", isDark ? "dark" : "light");
   themeToggle.setAttribute("aria-label", isDark ? "Switch to light mode" : "Switch to dark mode");
-});
+  showToast(isDark ? "Dark mode on." : "Light mode on.");
+}
+
+themeToggle.addEventListener("click", toggleTheme);
 
 const menuToggle = document.querySelector("#menuToggle");
 const mobileMenu = document.querySelector("#mobileMenu");
@@ -1027,6 +1030,53 @@ function getCommandPaletteActions(query = "") {
     key: "",
     run: () => openLinkedTool("guides")
   });
+  const utilityActions = [
+    {
+      id: "toggle-theme",
+      title: document.body.classList.contains("dark") ? "Switch to light mode" : "Switch to dark mode",
+      description: "Change the Handy appearance",
+      icon: "◐",
+      key: "Ctrl/Cmd+Shift+D",
+      run: toggleTheme
+    },
+    {
+      id: "open-backup",
+      title: "Open backup and restore",
+      description: "View or restore Handy settings",
+      icon: "↓",
+      key: "Ctrl/Cmd+Shift+B",
+      run: () => {
+        const backupDetails = document.querySelector(".backup-settings");
+        if (!backupDetails) return;
+        backupDetails.open = true;
+        backupDetails.scrollIntoView({ behavior: "smooth", block: "center" });
+        document.querySelector("#exportSettingsBackup")?.focus();
+      }
+    },
+    {
+      id: "clear-recent",
+      title: "Clear recent tools",
+      description: "Remove recent tool shortcuts",
+      icon: "×",
+      key: "Ctrl/Cmd+Shift+R",
+      run: () => document.querySelector("#clearRecent")?.click()
+    },
+    {
+      id: "open-shortcuts",
+      title: "Keyboard shortcuts",
+      description: "View the Handy shortcut reference",
+      icon: "?",
+      key: "",
+      run: () => {
+        const details = document.querySelector("#keyboardShortcuts");
+        if (!details) return;
+        details.open = true;
+        details.scrollIntoView({ behavior: "smooth", block: "center" });
+        details.querySelector("summary")?.focus();
+      }
+    }
+  ];
+  toolActions.push(...utilityActions);
   return toolActions.filter((action) =>
     `${action.title} ${action.description}`.toLowerCase().includes(normalized)
   );
@@ -1095,6 +1145,29 @@ document.addEventListener("keydown", (event) => {
   if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") {
     event.preventDefault();
     openCommandPalette();
+    return;
+  }
+  if ((event.ctrlKey || event.metaKey) && event.shiftKey
+    && event.key.toLowerCase() === "d") {
+    event.preventDefault();
+    toggleTheme();
+    return;
+  }
+  if ((event.ctrlKey || event.metaKey) && event.shiftKey
+    && event.key.toLowerCase() === "b") {
+    event.preventDefault();
+    const backupDetails = document.querySelector(".backup-settings");
+    if (backupDetails) {
+      backupDetails.open = true;
+      backupDetails.scrollIntoView({ behavior: "smooth", block: "center" });
+      document.querySelector("#exportSettingsBackup")?.focus();
+    }
+    return;
+  }
+  if ((event.ctrlKey || event.metaKey) && event.shiftKey
+    && event.key.toLowerCase() === "r") {
+    event.preventDefault();
+    document.querySelector("#clearRecent")?.click();
     return;
   }
   if (event.key === "/" && !event.ctrlKey && !event.metaKey && !event.altKey

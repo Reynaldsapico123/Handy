@@ -793,6 +793,21 @@ async function run() {
     await page.keyboard.press("Escape");
     assert(await page.locator("#commandPalette").evaluate((palette) => palette.hidden));
 
+    const darkBeforeShortcut = await page.locator("body").evaluate((body) => body.classList.contains("dark"));
+    await page.keyboard.press("Control+Shift+D");
+    assert.strictEqual(
+      await page.locator("body").evaluate((body) => body.classList.contains("dark")),
+      !darkBeforeShortcut
+    );
+    await page.keyboard.press("Control+K");
+    await page.fill("#commandPaletteInput", "backup and restore");
+    assert.strictEqual(await page.locator("#commandPaletteList [role='option']").count(), 1);
+    await page.keyboard.press("Enter");
+    assert(await page.locator(".backup-settings").evaluate((details) => details.open));
+
+    await page.keyboard.press("Control+Shift+R");
+    assert.strictEqual(await page.evaluate(() => localStorage.getItem("handy-recent-tools")), null);
+
     await page.keyboard.press("Control+K");
     await page.waitForSelector("#commandPalette:not([hidden])");
     await page.fill("#commandPaletteInput", "timer");
