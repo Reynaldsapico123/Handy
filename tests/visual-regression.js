@@ -30,7 +30,16 @@ const targets = [
   { name: "currency", trigger: '#toolGrid button[aria-label="Open Currency Exchange"]', modal: "#currencyModal" },
   { name: "timer", trigger: '#toolGrid button[aria-label="Open Timer and Stopwatch"]', modal: "#timerModal" },
   { name: "qr-maker", trigger: '#toolGrid button[aria-label="Open QR Code Maker"]', modal: "#qrModal" },
-  { name: "qr-scanner", trigger: "#qrScanShortcut", modal: "#qrModal", captureSelector: ".qr-panel" },
+  {
+    name: "qr-scanner",
+    trigger: "#qrScanShortcut",
+    modal: "#qrModal",
+    captureSelector: ".qr-panel",
+    captureSize: {
+      desktop: { width: 650, height: 428 },
+      mobile: { width: 390, height: 453 }
+    }
+  },
   { name: "guides", trigger: ".learn-link", modal: "#guidesModal" }
 ];
 
@@ -115,7 +124,7 @@ async function waitForPanel(page, modal) {
   await page.waitForTimeout(100);
 }
 
-async function capture(page, name, selector) {
+async function capture(page, name, selector, captureSize) {
   await page.waitForTimeout(150);
   const screenshotOptions = {
     path: undefined,
@@ -123,9 +132,19 @@ async function capture(page, name, selector) {
     caret: "hide",
     fullPage: false
   };
-  const buffer = selector
-    ? await page.locator(selector).screenshot(screenshotOptions)
-    : await page.screenshot(screenshotOptions);
+  let buffer;
+  if (selector && captureSize) {
+    const box = await page.locator(selector).boundingBox();
+    if (!box) throw new Error(`Could not locate visual capture target: ${selector}`);
+    buffer = await page.screenshot({
+      ...screenshotOptions,
+      clip: { x: box.x, y: box.y, ...captureSize }
+    });
+  } else {
+    buffer = selector
+      ? await page.locator(selector).screenshot(screenshotOptions)
+      : await page.screenshot(screenshotOptions);
+  }
   compareScreenshot(name, buffer);
 }
 
@@ -187,7 +206,12 @@ async function run() {
               elements.forEach((element) => { element.style.visibility = "hidden"; })
             );
           }
-          await capture(page, `${target.name}-${viewport.name}-${theme}`, target.captureSelector);
+          await capture(
+            page,
+            `${target.name}-${viewport.name}-${theme}`,
+            target.captureSelector,
+            target.captureSize?.[viewport.name]
+          );
           await page.keyboard.press("Escape");
           await modal.waitFor({ state: "hidden" });
         }
