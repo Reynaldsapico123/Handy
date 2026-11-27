@@ -27,7 +27,6 @@ const backupStatus = document.querySelector("#backupStatus");
 const backupPreview = document.querySelector("#backupPreview");
 const confirmBackupRestore = document.querySelector("#confirmBackupRestore");
 const cancelBackupRestore = document.querySelector("#cancelBackupRestore");
-const accountButton = document.querySelector("#accountButton");
 let pendingBackupData = null;
 let selectedSuggestionIndex = -1;
 const favoritesKey = "handy-favorite-tools";
@@ -1095,6 +1094,11 @@ mobileMenu.querySelectorAll("a").forEach((link) => {
 });
 
 document.addEventListener("click", (event) => {
+  if (event.target.closest("#accountButton")) {
+    loadScript("account.js")
+      .then(() => window.openHandyAccount?.())
+      .catch(() => showToast("Account could not be loaded."));
+  }
   if (!event.target.closest(".nav-actions") && !event.target.closest(".mobile-menu")) {
     closeMobileMenu();
   }
@@ -3879,6 +3883,17 @@ clearUpdateHistoryButton.addEventListener("click", () => {
   sessionStorage.removeItem("handy-update-dismissed");
   diagnosticUpdateHistory.textContent = "No updates recorded";
   diagnosticsStatus.textContent = "Update history cleared.";
+});
+
+
+accountButton?.addEventListener("click", async () => {
+  try {
+    await loadScript("account.js");
+    if (typeof window.openHandyAccount === "function") window.openHandyAccount();
+  } catch (error) {
+    console.error("Could not load Handy account.", error);
+    showToast("Account could not be loaded.");
+  }
 });
 
 const welcomeModal = document.querySelector("#welcomeModal");

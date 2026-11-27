@@ -12,6 +12,15 @@ function listFiles(directory) {
   });
 }
 
+function minifyCss(css) {
+  return css
+    .replace(/\/\*[\s\S]*?\*\//g, "")
+    .replace(/\s+/g, " ")
+    .replace(/\s*([{}:;,>])\s*/g, "$1")
+    .replace(/;}/g, "}")
+    .trim();
+}
+
 fs.rmSync(dist, { recursive: true, force: true });
 fs.mkdirSync(dist, { recursive: true });
 
@@ -44,6 +53,8 @@ for (const entry of fs.readdirSync(root, { withFileTypes: true })) {
       .replaceAll("node_modules/qrcode-generator/dist/qrcode.js", "vendor/qrcode.js")
       .replaceAll("node_modules/jsqr/dist/jsQR.js", "vendor/jsQR.js");
     fs.writeFileSync(destination, contents);
+  } else if (entry.name.endsWith(".css")) {
+    fs.writeFileSync(destination, minifyCss(fs.readFileSync(source, "utf8")));
   } else {
     fs.copyFileSync(source, destination);
   }

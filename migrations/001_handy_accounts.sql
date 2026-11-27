@@ -58,9 +58,27 @@ create policy "Owners manage their shared trips"
   using (auth.uid() = owner_id)
   with check (auth.uid() = owner_id);
 
-create policy "Public shared trips are readable by token"
-  on public.handy_shared_trips for select
-  using (is_public = true);
+create or replace function public.get_shared_handy_trip(p_share_token text)
+returns table (
+  id uuid,
+  title text,
+  state jsonb,
+  updated_at timestamptz
+)
+language sql
+security definer
+set search_path = public
+stable
+as $$
+  select id, title, state, updated_at
+  from public.handy_shared_trips
+  where share_token = p_share_token
+    and is_public = true
+  limit 1;
+$$;
+
+revoke all on function public.get_shared_handy_trip(text) from public;
+grant execute on function public.get_shared_handy_trip(text) to anon, authenticated;
 
 create or replace function public.handle_new_handy_user()
 returns trigger

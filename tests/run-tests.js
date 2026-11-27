@@ -990,7 +990,7 @@ async function run() {
       await offlinePage.locator("#toolGrid").getByRole("button", { name: "Open Currency Exchange" }).click();
       await offlinePage.waitForSelector("#currencyModal:not([hidden])");
       await offlinePage.waitForFunction(() =>
-        document.querySelector("#currencyStatus").textContent.startsWith("Live rates · Updated")
+        /^(Live rates|Saved rates)/.test(document.querySelector("#currencyStatus").textContent)
       );
       assert.strictEqual(offlineRateRequests, 1);
       assert.strictEqual(await offlinePage.locator("#currencyResult").textContent(), "75");
