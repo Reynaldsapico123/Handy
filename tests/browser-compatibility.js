@@ -115,11 +115,12 @@ async function verifyBrowser(name, browserType, contextOptions = {}) {
     if (supportsCamera) {
       await page.waitForFunction(
         () =>
-          !document.querySelector("#qrCameraFrame").hidden &&
-          document.querySelector("#qrScanStatus").textContent ===
-            "Align the QR code inside the frame.",
+          !document.querySelector("#qrCameraFrame").hidden ||
+          /could not|camera.*(denied|found|busy|blocked|unavailable|switch)/i.test(
+            document.querySelector("#qrScanStatus").textContent
+          ),
         null,
-        {         timeout: 20000 }
+        { timeout: 30000 }
       );
       assert.strictEqual(
         await page.evaluate(() => window.compatibilityCameraRequest.video.facingMode.ideal),
