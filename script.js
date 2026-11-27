@@ -47,6 +47,8 @@ const backupKeys = [
   "handy-world-clock",
   "handy-world-clock-meeting",
   "handy-unit-converter",
+  "handy-unit-converter-favorites",
+  "handy-unit-converter-recent",
   "handy-timer-duration"
 ];
 let installPrompt = null;
@@ -3103,6 +3105,65 @@ function validateBackupData(data) {
         to: value.to,
         value: String(value.value)
       };
+    } else if (key === "handy-unit-converter-favorites") {
+      if (!Array.isArray(value) || value.length > 8) {
+        throw new Error("Backup unit converter favorites are invalid.");
+      }
+      const validCategories = new Set(["length", "weight", "temperature", "area"]);
+      const unitsByCategory = {
+        length: new Set(["meter", "kilometer", "centimeter", "mile", "foot", "inch"]),
+        weight: new Set(["kilogram", "gram", "pound", "ounce"]),
+        temperature: new Set(["celsius", "fahrenheit", "kelvin"]),
+        area: new Set(["squareMeter", "squareKilometer", "squareFoot", "acre"])
+      };
+      const seen = new Set();
+      const favorites = [];
+      for (const pair of value) {
+        if (
+          !isBackupRecord(pair)
+          || !validCategories.has(pair.category)
+          || !unitsByCategory[pair.category].has(pair.from)
+          || !unitsByCategory[pair.category].has(pair.to)
+        ) throw new Error("Backup unit converter favorites are invalid.");
+        const keyValue = `${pair.category}:${pair.from}:${pair.to}`;
+        if (!seen.has(keyValue)) {
+          seen.add(keyValue);
+          favorites.push({ category: pair.category, from: pair.from, to: pair.to });
+        }
+      }
+      validated[key] = favorites;
+    } else if (key === "handy-unit-converter-recent") {
+      if (!Array.isArray(value) || value.length > 8) {
+        throw new Error("Backup unit converter recent conversions are invalid.");
+      }
+      const validCategories = new Set(["length", "weight", "temperature", "area"]);
+      const unitsByCategory = {
+        length: new Set(["meter", "kilometer", "centimeter", "mile", "foot", "inch"]),
+        weight: new Set(["kilogram", "gram", "pound", "ounce"]),
+        temperature: new Set(["celsius", "fahrenheit", "kelvin"]),
+        area: new Set(["squareMeter", "squareKilometer", "squareFoot", "acre"])
+      };
+      const recent = [];
+      for (const entry of value) {
+        if (
+          !isBackupRecord(entry)
+          || !validCategories.has(entry.category)
+          || !unitsByCategory[entry.category].has(entry.from)
+          || !unitsByCategory[entry.category].has(entry.to)
+          || typeof entry.value !== "string"
+          || entry.value.length > 64
+          || typeof entry.result !== "string"
+          || entry.result.length > 64
+        ) throw new Error("Backup unit converter recent conversions are invalid.");
+        recent.push({
+          category: entry.category,
+          from: entry.from,
+          to: entry.to,
+          value: entry.value,
+          result: entry.result
+        });
+      }
+      validated[key] = recent;
     } else if (key === "handy-timer-duration") {
       if (
         !isBackupRecord(value)

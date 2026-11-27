@@ -11,7 +11,17 @@ async function initializeUnitConverter() {
   const fromValue = document.querySelector("#unitFromValue");
   const toValue = document.querySelector("#unitToValue");
   const copyValue = document.querySelector("#unitCopy");
+  const savePair = document.querySelector("#unitSavePair");
+  const favoritesList = document.querySelector("#unitFavorites");
+  const favoritesEmpty = document.querySelector("#unitFavoritesEmpty");
+  const recentList = document.querySelector("#unitRecentList");
+  const recentEmpty = document.querySelector("#unitRecentEmpty");
+  const clearRecent = document.querySelector("#unitClearRecent");
+  const favoritesKey = "handy-unit-converter-favorites";
+  const recentKey = "handy-unit-converter-recent";
   const savedUnit = JSON.parse(localStorage.getItem("handy-unit-converter") || "null");
+  let favorites = readJsonArray(favoritesKey);
+  let recent = readJsonArray(recentKey);
 
   const units = {
     length: {
@@ -40,6 +50,102 @@ async function initializeUnitConverter() {
       acre: { label: "Acres", factor: 4046.8564224 }
     }
   };
+
+  function readJsonArray(key) {
+    try {
+      const saved = JSON.parse(localStorage.getItem(key));
+      return Array.isArray(saved) ? saved : [];
+    } catch {
+      return [];
+    }
+  }
+
+  function validPair(pair) {
+    return pair
+      && typeof pair.category === "string"
+      && units[pair.category]?.[pair.from]
+      && units[pair.category]?.[pair.to]
+      && String(pair.category).length <= 20
+      && String(pair.from).length <= 30
+      && String(pair.to).length <= 30;
+  }
+
+  favorites = favorites.filter(validPair).slice(0, 8);
+  recent = recent.filter((item) =>
+    validPair(item)
+    && typeof item.value === "string"
+    && item.value.length <= 64
+  ).slice(0, 8);
+
+  function pairKey(pair) {
+    return `${pair.category}:${pair.from}:${pair.to}`;
+  }
+
+  function pairLabel(pair) {
+    return `${units[pair.category][pair.from].label} → ${units[pair.category][pair.to].label}`;
+  }
+
+  function renderFavorites() {
+    favoritesList.replaceChildren();
+    favoritesEmpty.hidden = favorites.length > 0;
+    favorites.forEach((pair, index) => {
+      const item = document.createElement("div");
+      item.className = "unit-favorite";
+      const apply = document.createElement("button");
+      apply.type = "button";
+      apply.dataset.favoriteIndex = String(index);
+      apply.textContent = pairLabel(pair);
+      apply.setAttribute("aria-label", `Apply saved pair ${pairLabel(pair)}`);
+      const remove = document.createElement("button");
+      remove.type = "button";
+      remove.className = "unit-favorite-remove";
+      remove.dataset.removeFavoriteIndex = String(index);
+      remove.textContent = "×";
+      remove.setAttribute("aria-label", `Remove saved pair ${pairLabel(pair)}`);
+      item.append(apply, remove);
+      favoritesList.append(item);
+    });
+  }
+
+  function renderRecent() {
+    recentList.replaceChildren();
+    recentEmpty.hidden = recent.length > 0;
+    clearRecent.disabled = recent.length === 0;
+    recent.forEach((entry, index) => {
+      const item = document.createElement("div");
+      item.className = "unit-recent-item";
+      const apply = document.createElement("button");
+      apply.type = "button";
+      apply.className = "unit-recent-copy";
+      apply.dataset.recentIndex = String(index);
+      apply.setAttribute("aria-label", `Repeat conversion ${entry.value} ${pairLabel(entry)}`);
+      const headline = document.createElement("strong");
+      headline.textContent = `${entry.value} ${units[entry.category][entry.from].label} → ${entry.result}`;
+      const detail = document.createElement("span");
+      detail.textContent = pairLabel(entry);
+      apply.append(headline, detail);
+      const remove = document.createElement("button");
+      remove.type = "button";
+      remove.className = "unit-recent-remove";
+      remove.dataset.removeRecentIndex = String(index);
+      remove.textContent = "×";
+      remove.setAttribute("aria-label", `Remove recent conversion ${entry.value} ${pairLabel(entry)}`);
+      item.append(apply, remove);
+      recentList.append(item);
+    });
+  }
+
+  function saveRecent(pair) {
+    const entry = { ...pair, value: fromValue.value, result: toValue.value };
+    if (!validPair(entry) || !entry.value.trim() || !entry.result.trim()) return;
+    recent = recent.filter((item) => !(
+      pairKey(item) === pairKey(entry) && item.value === entry.value
+    ));
+    recent.unshift(entry);
+    recent = recent.slice(0, 8);
+    localStorage.setItem(recentKey, JSON.stringify(recent));
+    renderRecent();
+  }
 
   function populate() {
     const options = Object.entries(units[category.value])
@@ -130,6 +236,11 @@ async function initializeUnitConverter() {
   });
   copyValue.addEventListener("click", async () => {
     if (copyValue.disabled) return;
+    saveRecent({
+      category: category.value,
+      from: from.value,
+      to: to.value
+    });
     try {
       await navigator.clipboard.writeText(toValue.value);
       showToast("Converted value copied.");
@@ -137,6 +248,105 @@ async function initializeUnitConverter() {
       showToast("Clipboard is unavailable in this browser");
     }
   });
+
+  savePair.addEventListener("click", () => {
+    const pair = { category: category.value, from: from.value, to: to.value };
+    if (favorites.some((item) => pairKey(item) === pairKey(pair))) {
+      showToast("This unit pair is already saved.");
+      return;
+    }
+    if (favorites.length >= 8) {
+      showToast("You can save up to 8 unit pairs.");
+      return;
+    }
+    favorites.push(pair);
+    localStorage.setItem(favoritesKey, JSON.stringify(favorites));
+    renderFavorites();
+    showToast("Unit pair saved.");
+  });
+
+  favoritesList.addEventListener("click", (event) => {
+    const removeButton = event.target.closest("[data-remove-favorite-index]");
+    if (removeButton) {
+      const index = Number(removeButton.dataset.removeFavoriteIndex);
+      const removed = favorites[index];
+      if (!removed) return;
+      favorites.splice(index, 1);
+      localStorage.setItem(favoritesKey, JSON.stringify(favorites));
+      renderFavorites();
+      showToast("Saved pair removed.", {
+        label: "Undo",
+        onClick: () => {
+          favorites.splice(Math.min(index, favorites.length), 0, removed);
+          localStorage.setItem(favoritesKey, JSON.stringify(favorites));
+          renderFavorites();
+          showToast("Saved pair restored.");
+        }
+      });
+      return;
+    }
+    const applyButton = event.target.closest("[data-favorite-index]");
+    if (!applyButton) return;
+    const pair = favorites[Number(applyButton.dataset.favoriteIndex)];
+    if (!pair) return;
+    category.value = pair.category;
+    populate();
+    from.value = pair.from;
+    to.value = pair.to;
+    convert();
+  });
+
+  recentList.addEventListener("click", (event) => {
+    const removeButton = event.target.closest("[data-remove-recent-index]");
+    if (removeButton) {
+      const index = Number(removeButton.dataset.removeRecentIndex);
+      const removed = recent[index];
+      if (!removed) return;
+      recent.splice(index, 1);
+      localStorage.setItem(recentKey, JSON.stringify(recent));
+      renderRecent();
+      showToast("Recent conversion removed.", {
+        label: "Undo",
+        onClick: () => {
+          recent.splice(Math.min(index, recent.length), 0, removed);
+          localStorage.setItem(recentKey, JSON.stringify(recent));
+          renderRecent();
+          showToast("Recent conversion restored.");
+        }
+      });
+      return;
+    }
+    const applyButton = event.target.closest("[data-recent-index]");
+    if (!applyButton) return;
+    const entry = recent[Number(applyButton.dataset.recentIndex)];
+    if (!entry) return;
+    category.value = entry.category;
+    populate();
+    from.value = entry.from;
+    to.value = entry.to;
+    fromValue.value = entry.value;
+    convert();
+  });
+
+  clearRecent.addEventListener("click", () => {
+    if (!recent.length) return;
+    const previous = [...recent];
+    recent = [];
+    localStorage.removeItem(recentKey);
+    renderRecent();
+    showToast("Recent conversions cleared.", {
+      label: "Undo",
+      onClick: () => {
+        recent = previous;
+        localStorage.setItem(recentKey, JSON.stringify(recent));
+        renderRecent();
+        showToast("Recent conversions restored.");
+      }
+    });
+  });
+
+  renderFavorites();
+  renderRecent();
   document.addEventListener("keydown", (event) => {
     if (!modal.hidden && event.key === "Escape") close();
   });

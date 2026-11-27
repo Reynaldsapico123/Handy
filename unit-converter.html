@@ -30,5 +30,21 @@
       </div>
     </div>
     <button type="button" class="unit-copy" id="unitCopy" aria-label="Copy result" disabled>Copy result</button>
+    <section class="unit-shortcuts" aria-labelledby="unitShortcutsTitle">
+      <div class="unit-shortcuts-heading">
+        <h3 id="unitShortcutsTitle">Saved pairs</h3>
+        <button type="button" id="unitSavePair" class="unit-save-pair">Save pair</button>
+      </div>
+      <p class="unit-shortcuts-empty" id="unitFavoritesEmpty">No saved pairs yet.</p>
+      <div class="unit-favorites" id="unitFavorites"></div>
+    </section>
+    <section class="unit-recent" aria-labelledby="unitRecentTitle">
+      <div class="unit-recent-heading">
+        <h3 id="unitRecentTitle">Recent conversions</h3>
+        <button type="button" id="unitClearRecent" class="unit-clear-recent" disabled>Clear</button>
+      </div>
+      <p class="unit-recent-empty" id="unitRecentEmpty">No recent conversions yet.</p>
+      <div class="unit-recent-list" id="unitRecentList"></div>
+    </section>
   </section>
 </div>

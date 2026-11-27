@@ -388,8 +388,11 @@ async function run() {
     await page.selectOption("#unitTo", "mile");
     await page.fill("#unitFromValue", "100");
     assert.strictEqual(await page.locator("#unitToValue").inputValue(), "62.137");
+    await page.click("#unitSavePair");
+    assert.strictEqual(await page.locator("#unitFavorites .unit-favorite").count(), 1);
     await page.click("#unitCopy");
     await page.waitForFunction(() => window.copiedToolLink === "62.137");
+    assert.strictEqual(await page.locator("#unitRecentList .unit-recent-item").count(), 1);
     await page.click("#unitSwap");
     assert.strictEqual(await page.locator("#unitFrom").inputValue(), "mile");
     assert.strictEqual(await page.locator("#unitTo").inputValue(), "kilometer");
@@ -1456,6 +1459,12 @@ async function run() {
         to: "mile",
         value: "100"
       }));
+      localStorage.setItem("handy-unit-converter-favorites", JSON.stringify([
+        { category: "length", from: "kilometer", to: "mile" }
+      ]));
+      localStorage.setItem("handy-unit-converter-recent", JSON.stringify([
+        { category: "length", from: "kilometer", to: "mile", value: "100", result: "62.137" }
+      ]));
       localStorage.setItem("handy-travel-kit", JSON.stringify({
         activeId: "trip-paris",
         trips: [
