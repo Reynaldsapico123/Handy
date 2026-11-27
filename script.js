@@ -45,6 +45,7 @@ const backupKeys = [
   "handy-currency-pair",
   "handy-currency-live-rates",
   "handy-world-clock",
+  "handy-world-clock-meeting",
   "handy-unit-converter",
   "handy-timer-duration"
 ];
@@ -3024,6 +3025,20 @@ function validateBackupData(data) {
         throw new Error("Backup contains an invalid world clock time zone.");
       }
       validated[key] = [...value];
+    } else if (key === "handy-world-clock-meeting") {
+      const timeToMinutes = (time) => {
+        const match = typeof time === "string" && /^(\d{2}):(\d{2})$/.exec(time);
+        return match ? Number(match[1]) * 60 + Number(match[2]) : null;
+      };
+      const start = isBackupRecord(value) ? timeToMinutes(value.start) : null;
+      const end = isBackupRecord(value) ? timeToMinutes(value.end) : null;
+      if (
+        start === null
+        || end === null
+        || start >= end
+        || ![15, 30, 45, 60].includes(value.duration)
+      ) throw new Error("Backup world clock meeting preferences are invalid.");
+      validated[key] = { start: value.start, end: value.end, duration: value.duration };
     } else if (key === "handy-unit-converter") {
       if (
         !isBackupRecord(value)

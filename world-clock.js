@@ -11,6 +11,7 @@ async function initializeWorldClock() {
   const meetingDate = document.querySelector("#clockMeetingDate");
   const meetingStart = document.querySelector("#clockMeetingStart");
   const meetingEnd = document.querySelector("#clockMeetingEnd");
+  const meetingDuration = document.querySelector("#clockMeetingDuration");
   const meetingStatus = document.querySelector("#clockMeetingStatus");
   const meetingSlots = document.querySelector("#clockMeetingSlots");
   const meetingCopy = document.querySelector("#clockMeetingCopy");
@@ -19,6 +20,9 @@ async function initializeWorldClock() {
     "Europe/London",
     "America/New_York"
   ];
+  const meetingPreferencesKey = "handy-world-clock-meeting";
+  const defaultMeetingPreferences = { start: "09:00", end: "17:00", duration: 30 };
+  const allowedMeetingDurations = new Set([15, 30, 45, 60]);
 
   let cities = loadCities();
   let clockTimer;
@@ -37,6 +41,44 @@ async function initializeWorldClock() {
 
   function saveCities() {
     localStorage.setItem("handy-world-clock", JSON.stringify(cities));
+  }
+
+  function timeInputMinutes(value) {
+    const match = /^(\d{2}):(\d{2})$/.exec(value);
+    if (!match) return null;
+    const hours = Number(match[1]);
+    const minutes = Number(match[2]);
+    if (hours > 23 || minutes > 59) return null;
+    return hours * 60 + minutes;
+  }
+
+  function loadMeetingPreferences() {
+    try {
+      const saved = JSON.parse(localStorage.getItem(meetingPreferencesKey));
+      const start = timeInputMinutes(saved?.start);
+      const end = timeInputMinutes(saved?.end);
+      if (
+        start === null
+        || end === null
+        || start >= end
+        || !allowedMeetingDurations.has(saved.duration)
+      ) return { ...defaultMeetingPreferences };
+      return { start: saved.start, end: saved.end, duration: saved.duration };
+    } catch {
+      return { ...defaultMeetingPreferences };
+    }
+  }
+
+  function saveMeetingPreferences() {
+    const start = timeInputMinutes(meetingStart.value);
+    const end = timeInputMinutes(meetingEnd.value);
+    const duration = Number(meetingDuration.value);
+    if (start === null || end === null || start >= end || !allowedMeetingDurations.has(duration)) return;
+    localStorage.setItem(meetingPreferencesKey, JSON.stringify({
+      start: meetingStart.value,
+      end: meetingEnd.value,
+      duration
+    }));
   }
 
   function cityName(timeZone) {
@@ -126,8 +168,17 @@ async function initializeWorldClock() {
     }
 
     const [, year, month, day] = dateParts.map(Number);
-    const workStart = Number(startParts[1]) * 60 + Number(startParts[2]);
-    const workEnd = Number(endParts[1]) * 60 + Number(endParts[2]);
+    const workStart = timeInputMinutes(meetingStart.value);
+    const workEnd = timeInputMinutes(meetingEnd.value);
+    const durationMinutes = Number(meetingDuration.value);
+    if (workStart === null || workEnd === null) {
+      meetingStatus.textContent = "Choose valid workday hours.";
+      return;
+    }
+    if (!allowedMeetingDurations.has(durationMinutes)) {
+      meetingStatus.textContent = "Choose a meeting length from the list.";
+      return;
+    }
     if (workStart >= workEnd) {
       meetingStatus.textContent = "Workday end must be later than its start.";
       return;
@@ -139,11 +190,12 @@ async function initializeWorldClock() {
       return;
     }
     const localEnd = new Date(year, month - 1, day + 1);
-    const duration = 30 * 60 * 1000;
+    const duration = durationMinutes * 60 * 1000;
+    const step = 30 * 60 * 1000;
     const localTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
     const options = [];
 
-    for (let timestamp = localStart.getTime(); timestamp + duration <= localEnd.getTime(); timestamp += duration) {
+    for (let timestamp = localStart.getTime(); timestamp + duration <= localEnd.getTime(); timestamp += step) {
       const lastMinute = timestamp + duration - 60 * 1000;
       const overlapsAllCities = cities.every((timeZone) =>
         timeInWorkday(timeZone, timestamp, workStart, workEnd)
@@ -163,7 +215,7 @@ async function initializeWorldClock() {
         .map((timeZone) => `${cityName(timeZone)}: ${formatMeetingDateTime(timeZone, timestamp)}`)
         .join(" · ");
       const heading = document.createElement("strong");
-      heading.textContent = `Your time · ${localTime}`;
+      heading.textContent = `Your time · ${localTime} · ${durationMinutes} min`;
       const details = document.createElement("span");
       details.textContent = cityTimes;
       button.setAttribute("aria-label", `Select meeting time. Your time: ${localTime}. ${cityTimes}`);
@@ -172,7 +224,7 @@ async function initializeWorldClock() {
     }
 
     meetingStatus.textContent = options.length
-      ? `${options.length} shared 30-minute start times found. Select one to copy.`
+      ? `${options.length} shared ${durationMinutes}-minute meeting times found. Select one to copy.`
       : "No shared working-time overlap found. Try another date or wider hours.";
   }
 
@@ -265,11 +317,19 @@ async function initializeWorldClock() {
   });
 
   meetingDate.value = localDateValue(new Date());
+  const savedMeetingPreferences = loadMeetingPreferences();
+  meetingStart.value = savedMeetingPreferences.start;
+  meetingEnd.value = savedMeetingPreferences.end;
+  meetingDuration.value = String(savedMeetingPreferences.duration);
   meetingForm.addEventListener("input", () => {
     clearMeetingOptions("Update the date or workday, then find times again.");
   });
+  [meetingStart, meetingEnd, meetingDuration].forEach((input) => {
+    input.addEventListener("change", saveMeetingPreferences);
+  });
   meetingForm.addEventListener("submit", (event) => {
     event.preventDefault();
+    saveMeetingPreferences();
     findMeetingTimes();
   });
   meetingSlots.addEventListener("click", (event) => {
@@ -285,8 +345,9 @@ async function initializeWorldClock() {
   meetingCopy.addEventListener("click", async () => {
     if (!Number.isFinite(selectedMeetingAt)) return;
     const localTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+    const duration = Number(meetingDuration.value);
     const lines = [
-      `Handy meeting time — ${formatMeetingDateTime(localTimeZone, selectedMeetingAt)} (${localTimeZone})`,
+      `Handy meeting (${duration} minutes) — ${formatMeetingDateTime(localTimeZone, selectedMeetingAt)} (${localTimeZone})`,
       ...cities.map((timeZone) =>
         `${cityName(timeZone)} — ${formatMeetingDateTime(timeZone, selectedMeetingAt)}`
       )

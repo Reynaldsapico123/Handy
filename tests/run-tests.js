@@ -446,7 +446,7 @@ async function run() {
     assert.strictEqual(await page.locator("#timerLapList li").count(), 0);
     await page.keyboard.press("Escape");
 
-    await page.getByRole("button", { name: "Open World Clock" }).click();
+    await page.locator("#toolGrid").getByRole("button", { name: "Open World Clock" }).click();
     await page.waitForSelector("#worldClockModal:not([hidden])");
     assert((await page.locator(".clock-card").count()) >= 3);
     await page.selectOption("#clockCity", "Asia/Tokyo");
@@ -464,6 +464,7 @@ async function run() {
     await page.locator("#clockMeetingDate").fill("2026-11-02");
     await page.locator("#clockMeetingStart").fill("09:00");
     await page.locator("#clockMeetingEnd").fill("10:00");
+    await page.selectOption("#clockMeetingDuration", "60");
     await page.locator("#clockMeetingForm").getByRole("button", { name: "Find times" }).click();
     assert.strictEqual(await page.locator(".clock-meeting-slot").count(), 0);
     assert.match(await page.locator("#clockMeetingStatus").textContent(), /No shared working-time overlap/);
@@ -475,7 +476,18 @@ async function run() {
     assert.strictEqual(await page.locator("#clockMeetingCopy").isDisabled(), false);
     await page.locator("#clockMeetingCopy").click();
     await page.waitForFunction(() => window.copiedMeetingTime?.includes("New York"));
+    assert.match(await page.evaluate(() => window.copiedMeetingTime), /Handy meeting \(60 minutes\)/);
     assert.match(await page.evaluate(() => window.copiedMeetingTime), /London/);
+    assert.deepStrictEqual(
+      await page.evaluate(() => JSON.parse(localStorage.getItem("handy-world-clock-meeting"))),
+      { start: "09:00", end: "17:00", duration: 60 }
+    );
+    await page.keyboard.press("Escape");
+    await page.reload({ waitUntil: "networkidle" });
+    await page.locator("#toolGrid").getByRole("button", { name: "Open World Clock" }).click();
+    assert.strictEqual(await page.locator("#clockMeetingStart").inputValue(), "09:00");
+    assert.strictEqual(await page.locator("#clockMeetingEnd").inputValue(), "17:00");
+    assert.strictEqual(await page.locator("#clockMeetingDuration").inputValue(), "60");
     await page.keyboard.press("Escape");
 
     let rateRequests = 0;
@@ -1415,6 +1427,11 @@ async function run() {
         updatedAt: "2026-11-22T01:00:00Z"
       }));
       localStorage.setItem("handy-world-clock", JSON.stringify(["Europe/Paris"]));
+      localStorage.setItem("handy-world-clock-meeting", JSON.stringify({
+        start: "08:30",
+        end: "16:30",
+        duration: 45
+      }));
       localStorage.setItem("handy-unit-converter", JSON.stringify({
         category: "length",
         from: "meter",
@@ -1485,6 +1502,11 @@ async function run() {
     assert.strictEqual(exportedBackup.version, 1);
     assert.deepStrictEqual(exportedBackup.data["handy-favorite-tools"], ["Calculator"]);
     assert.deepStrictEqual(exportedBackup.data["handy-timer-duration"], { minutes: 0, seconds: 0 });
+    assert.deepStrictEqual(exportedBackup.data["handy-world-clock-meeting"], {
+      start: "08:30",
+      end: "16:30",
+      duration: 45
+    });
     assert.deepStrictEqual(exportedBackup.data["handy-travel-kit"], {
       activeId: "trip-paris",
       trips: [
@@ -1562,6 +1584,7 @@ async function run() {
       favorites: JSON.parse(localStorage.getItem("handy-favorite-tools")),
       theme: localStorage.getItem("handy-theme"),
       currencyPair: JSON.parse(localStorage.getItem("handy-currency-pair")),
+      meetingPreferences: JSON.parse(localStorage.getItem("handy-world-clock-meeting")),
       travelKit: JSON.parse(localStorage.getItem("handy-travel-kit")),
       history: JSON.parse(localStorage.getItem("handy-calculator-history")),
       qrSettings: JSON.parse(localStorage.getItem("handy-qr-settings"))
@@ -1569,6 +1592,11 @@ async function run() {
     assert.deepStrictEqual(restoredBackupState.favorites, ["QR Code Maker"]);
     assert.strictEqual(restoredBackupState.theme, "dark");
     assert.deepStrictEqual(restoredBackupState.currencyPair, { from: "EUR", to: "USD", amount: "25" });
+    assert.deepStrictEqual(restoredBackupState.meetingPreferences, {
+      start: "08:30",
+      end: "16:30",
+      duration: 45
+    });
     assert.deepStrictEqual(restoredBackupState.travelKit, {
       activeId: "trip-paris",
       trips: [

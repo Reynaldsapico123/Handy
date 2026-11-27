@@ -33,7 +33,7 @@
     <section class="clock-meeting-planner" aria-labelledby="clockMeetingTitle">
       <div class="clock-meeting-heading">
         <h3 id="clockMeetingTitle">Find a meeting time</h3>
-        <p>Find 30-minute slots when every saved city is within working hours.</p>
+        <p>Find meeting slots that fit every saved city's working hours.</p>
       </div>
       <form class="clock-meeting-form" id="clockMeetingForm">
         <label class="clock-meeting-field" for="clockMeetingDate">
@@ -48,9 +48,18 @@
           <span>Workday ends</span>
           <input id="clockMeetingEnd" type="time" value="17:00" required>
         </label>
+        <label class="clock-meeting-field" for="clockMeetingDuration">
+          <span>Meeting length</span>
+          <select id="clockMeetingDuration" class="unit-select">
+            <option value="15">15 minutes</option>
+            <option value="30" selected>30 minutes</option>
+            <option value="45">45 minutes</option>
+            <option value="60">60 minutes</option>
+          </select>
+        </label>
         <button class="clock-meeting-submit" type="submit">Find times</button>
       </form>
-      <p class="clock-meeting-hint">Times are shown in each city's local time, including daylight-saving changes.</p>
+      <p class="clock-meeting-hint">Your work hours and meeting length are saved on this device. Times include daylight-saving changes.</p>
       <div class="clock-meeting-results">
         <p class="clock-meeting-status" id="clockMeetingStatus" role="status" aria-live="polite">
           Choose a date and working hours to find shared times.
