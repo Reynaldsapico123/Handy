@@ -89,6 +89,7 @@ async function run() {
           window.copiedToolLink = text;
           window.copiedCurrencyConversion = text;
           window.copiedMeetingTime = text;
+          window.copiedTravelChecklist = text;
         }
       }
     });
@@ -1227,17 +1228,26 @@ async function run() {
       assert(await directPage.locator("[data-travel-action]").first().isEnabled());
       await directPage.click("[data-checklist-template='essentials']");
       assert.strictEqual(await directPage.locator("#travelChecklistList .travel-checklist-item").count(), 5);
+      await directPage.click("[data-checklist-template='beach']");
+      assert.strictEqual(await directPage.locator("#travelChecklistList .travel-checklist-item").count(), 11);
       await directPage.fill("#travelChecklistItem", "Window seat");
       await directPage.click("#addTravelChecklistItem");
-      assert.strictEqual(await directPage.locator("#travelChecklistList .travel-checklist-item").count(), 6);
+      assert.strictEqual(await directPage.locator("#travelChecklistList .travel-checklist-item").count(), 12);
       await directPage.locator("#travelChecklistList .travel-checklist-item").first().locator("input").check();
-      assert.match(await directPage.locator("#travelChecklistProgress").textContent(), /1 of 6 complete/);
+      assert.match(await directPage.locator("#travelChecklistProgress").textContent(), /1 of 12 complete/);
+      await directPage.click("#markTravelChecklistComplete");
+      assert.match(await directPage.locator("#travelChecklistProgress").textContent(), /12 of 12 complete/);
+      await directPage.click("#copyTravelChecklist");
+      await directPage.waitForFunction(() => window.copiedTravelLink?.includes("[x] Passport"));
+      await directPage.click("#clearTravelChecklistComplete");
+      assert.match(await directPage.locator("#travelChecklistProgress").textContent(), /0 of 0 complete/);
+      await directPage.locator("#toast .toast-action").filter({ hasText: "Undo" }).click();
+      assert.match(await directPage.locator("#travelChecklistProgress").textContent(), /12 of 12 complete/);
       directPage.once("dialog", (dialog) => dialog.accept());
       await directPage.click("#resetTravelChecklist");
-      assert.match(await directPage.locator("#travelChecklistProgress").textContent(), /0 of 6 complete/);
+      assert.match(await directPage.locator("#travelChecklistProgress").textContent(), /0 of 12 complete/);
       await directPage.locator("#toast .toast-action").filter({ hasText: "Undo" }).click();
-      assert.match(await directPage.locator("#travelChecklistProgress").textContent(), /1 of 6 complete/);
-      await directPage.locator("#travelChecklistList .travel-checklist-item").first().locator("input").check();
+      assert.match(await directPage.locator("#travelChecklistProgress").textContent(), /12 of 12 complete/);
       await directPage.fill("#travelEventTitle", "Flight to Tokyo");
       await directPage.fill("#travelEventDateTime", "2026-12-10T09:30");
       await directPage.fill("#travelEventLocation", "Tokyo Haneda");
@@ -1286,10 +1296,10 @@ async function run() {
       assert.strictEqual(await directPage.locator("#printTripName").textContent(), "Tokyo getaway");
       assert.strictEqual(await directPage.locator("#printTripDestination").textContent(), "Tokyo, Japan");
       assert.match(await directPage.locator("#printTripDates").textContent(), /Dec 10, 2026/);
-      assert.match(await directPage.locator("#printTripChecklist").textContent(), /1 of 6 complete/);
+      assert.match(await directPage.locator("#printTripChecklist").textContent(), /12 of 12 complete/);
       assert.match(await directPage.locator("#printTripBudget").textContent(), /45/);
       assert.match(await directPage.locator("#printTripBudget").textContent(), /955/);
-      assert.strictEqual(await directPage.locator("#printTripChecklistList li").count(), 6);
+      assert.strictEqual(await directPage.locator("#printTripChecklistList li").count(), 12);
       assert.strictEqual(await directPage.locator("#printTripTimeline li").count(), 1);
       const originalTokyoId = await directPage.evaluate(() =>
         JSON.parse(localStorage.getItem("handy-travel-kit")).activeId
@@ -1316,7 +1326,7 @@ async function run() {
       await directPage.waitForSelector("#sharedTripView:not([hidden])");
       assert.strictEqual(await directPage.locator("#sharedTripName").textContent(), "Tokyo getaway");
       assert.strictEqual(await directPage.locator("#sharedTripDestination").textContent(), "Tokyo, Japan");
-      assert.match(await directPage.locator("#sharedTripChecklist").textContent(), /1 of 6 complete/);
+      assert.match(await directPage.locator("#sharedTripChecklist").textContent(), /12 of 12 complete/);
       assert.strictEqual(await directPage.locator("#sharedTripView").getByText("Train ticket").count(), 0);
       await directPage.click("#closeSharedTrip");
       assert(await directPage.locator("#sharedTripView").evaluate((view) => view.hidden));

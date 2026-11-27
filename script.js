@@ -1286,6 +1286,9 @@ const travelChecklistItem = document.querySelector("#travelChecklistItem");
 const addTravelChecklistItem = document.querySelector("#addTravelChecklistItem");
 const travelChecklistTemplateButtons = [...document.querySelectorAll("[data-checklist-template]")];
 const resetTravelChecklistButton = document.querySelector("#resetTravelChecklist");
+const markTravelChecklistCompleteButton = document.querySelector("#markTravelChecklistComplete");
+const clearTravelChecklistCompleteButton = document.querySelector("#clearTravelChecklistComplete");
+const copyTravelChecklistButton = document.querySelector("#copyTravelChecklist");
 const travelTimeline = document.querySelector("#travelTimeline");
 const travelItineraryStatus = document.querySelector("#travelItineraryStatus");
 const travelEventTitle = document.querySelector("#travelEventTitle");
@@ -1322,7 +1325,10 @@ let activeTravelPlanningSuggestion = null;
 const travelChecklistTemplates = {
   essentials: ["Passport", "Travel tickets", "Wallet and cards", "Phone charger", "Medication"],
   documents: ["Passport copies", "Insurance details", "Booking confirmations", "Emergency contacts"],
-  electronics: ["Phone", "Travel adapter", "Power bank", "Headphones", "Camera"]
+  electronics: ["Phone", "Travel adapter", "Power bank", "Headphones", "Camera"],
+  weekend: ["Two outfit changes", "Sleepwear", "Toothbrush", "Compact toiletries", "Light jacket"],
+  beach: ["Swimsuit", "Beach towel", "Sunscreen", "Sunglasses", "Hat", "Water bottle"],
+  international: ["Passport", "Visa documents", "Foreign currency", "Travel insurance", "International adapter", "Translation app"]
 };
 
 const travelDestinationProfiles = [
@@ -1940,6 +1946,11 @@ function renderTravelChecklist() {
   });
   const isReady = Boolean(activeTrip);
   resetTravelChecklistButton.disabled = !isReady || checklist.length === 0;
+  markTravelChecklistCompleteButton.disabled = !isReady || checklist.length === 0
+    || checklist.every((item) => item.done);
+  clearTravelChecklistCompleteButton.disabled = !isReady
+    || !checklist.some((item) => item.done);
+  copyTravelChecklistButton.disabled = !isReady || checklist.length === 0;
   travelChecklistItem.disabled = !isReady;
   addTravelChecklistItem.disabled = !isReady;
   travelChecklistTemplateButtons.forEach((button) => { button.disabled = !isReady; });
@@ -2567,6 +2578,43 @@ travelChecklistTemplateButtons.forEach((button) => {
   button.addEventListener("click", () => {
     addChecklistItems(travelChecklistTemplates[button.dataset.checklistTemplate] || []);
   });
+});
+markTravelChecklistCompleteButton.addEventListener("click", () => {
+  const checklist = getActiveChecklist();
+  if (!checklist.length) return;
+  if (!persistActiveChecklist(checklist.map((item) => ({ ...item, done: true })))) return;
+  travelChecklistStatus.textContent = "All packing items marked as packed.";
+});
+clearTravelChecklistCompleteButton.addEventListener("click", () => {
+  const checklist = getActiveChecklist();
+  if (!checklist.length) return;
+  const remaining = checklist.filter((item) => !item.done);
+  const removed = checklist.filter((item) => item.done);
+  if (!persistActiveChecklist(remaining)) return;
+  travelChecklistStatus.textContent = `Cleared ${removed.length} packed item${removed.length === 1 ? "" : "s"} from the checklist.`;
+  showToast("Packed items cleared.", {
+    label: "Undo",
+    onClick: () => {
+      persistActiveChecklist(checklist);
+      showToast("Checklist restored.");
+    }
+  });
+});
+copyTravelChecklistButton.addEventListener("click", async () => {
+  const activeTrip = getActiveTravelKit();
+  const checklist = getActiveChecklist();
+  if (!activeTrip || !checklist.length) return;
+  const text = [
+    `${activeTrip.name} packing checklist`,
+    ...checklist.map((item) => `${item.done ? "[x]" : "[ ]"} ${item.text}`)
+  ].join("\n");
+  try {
+    await copyText(text);
+    travelChecklistStatus.textContent = "Packing checklist copied.";
+  } catch (error) {
+    console.error("Could not copy the Travel Kit packing checklist.", error);
+    travelChecklistStatus.textContent = "Could not copy the checklist. Check clipboard permissions.";
+  }
 });
 addTravelChecklistItem.addEventListener("click", () => {
   const item = travelChecklistItem.value;

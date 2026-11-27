@@ -898,13 +898,15 @@ body.dark .saved-tool-icon { background: #302e43; }
   font-size: 12px;
 }
 .travel-checklist-templates,
-.travel-checklist-add {
+.travel-checklist-add,
+.travel-checklist-actions {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
 }
 .travel-checklist-templates button,
-.travel-checklist-add button {
+.travel-checklist-add button,
+.travel-checklist-actions button {
   min-height: 36px;
   padding: 0 10px;
   border: 1px solid var(--line);
@@ -917,6 +919,11 @@ body.dark .saved-tool-icon { background: #302e43; }
   cursor: pointer;
 }
 .travel-checklist-add { margin-top: 8px; }
+.travel-checklist-actions { margin-top: 8px; }
+.travel-checklist-actions button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
 .travel-checklist-add input {
   flex: 1;
   min-width: 180px;
@@ -2236,6 +2243,7 @@ body.dark .connection-status[data-state="offline"] { color: #f3c27f; }
   .travel-checklist-reset,
   .travel-checklist-templates button,
   .travel-checklist-add button,
+  .travel-checklist-actions button,
   .travel-itinerary-form button,
   .travel-calendar-export,
   .travel-expense-export,
