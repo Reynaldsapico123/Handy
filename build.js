@@ -36,7 +36,8 @@ for (const entry of fs.readdirSync(root, { withFileTypes: true })) {
   } else if (entry.name === "index.html") {
     const html = fs.readFileSync(source, "utf8")
       .replace("node_modules/qrcode-generator/dist/qrcode.js", "vendor/qrcode.js")
-      .replace("node_modules/jsqr/dist/jsQR.js", "vendor/jsQR.js");
+      .replace("node_modules/jsqr/dist/jsQR.js", "vendor/jsQR.js")
+      .replace("node_modules/@supabase/supabase-js/dist/umd/supabase.js", "vendor/supabase.js");
     fs.writeFileSync(destination, html);
   } else if (entry.name === "script.js" || entry.name === "sw.js") {
     const contents = fs.readFileSync(source, "utf8")
@@ -57,6 +58,10 @@ fs.copyFileSync(
 fs.copyFileSync(
   path.join(root, "node_modules", "jsqr", "dist", "jsQR.js"),
   path.join(vendorDirectory, "jsQR.js")
+);
+fs.copyFileSync(
+  path.join(root, "node_modules", "@supabase", "supabase-js", "dist", "umd", "supabase.js"),
+  path.join(vendorDirectory, "supabase.js")
 );
 
 const indexPath = path.join(dist, "index.html");

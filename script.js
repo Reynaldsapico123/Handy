@@ -27,6 +27,7 @@ const backupStatus = document.querySelector("#backupStatus");
 const backupPreview = document.querySelector("#backupPreview");
 const confirmBackupRestore = document.querySelector("#confirmBackupRestore");
 const cancelBackupRestore = document.querySelector("#cancelBackupRestore");
+const accountButton = document.querySelector("#accountButton");
 let pendingBackupData = null;
 let selectedSuggestionIndex = -1;
 const favoritesKey = "handy-favorite-tools";

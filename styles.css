@@ -1933,6 +1933,7 @@ body.dark .update-notice { box-shadow: 0 12px 36px rgba(0, 0, 0, 0.38); }
 }
 .tool-share:hover { border-color: var(--accent); color: var(--accent-text); }
 
+
 .command-palette {
   position: fixed;
   inset: 0;
