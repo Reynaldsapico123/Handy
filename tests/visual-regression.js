@@ -30,7 +30,7 @@ const targets = [
   { name: "currency", trigger: '#toolGrid button[aria-label="Open Currency Exchange"]', modal: "#currencyModal" },
   { name: "timer", trigger: '#toolGrid button[aria-label="Open Timer and Stopwatch"]', modal: "#timerModal" },
   { name: "qr-maker", trigger: '#toolGrid button[aria-label="Open QR Code Maker"]', modal: "#qrModal" },
-  { name: "qr-scanner", trigger: "#qrScanShortcut", modal: "#qrModal" },
+  { name: "qr-scanner", trigger: "#qrScanShortcut", modal: "#qrModal", captureSelector: ".qr-panel" },
   { name: "guides", trigger: ".learn-link", modal: "#guidesModal" }
 ];
 
@@ -115,14 +115,18 @@ async function waitForPanel(page, modal) {
   await page.waitForTimeout(100);
 }
 
-async function capture(page, name) {
+async function capture(page, name, selector) {
   await page.waitForTimeout(150);
-  await page.screenshot({
+  const screenshotOptions = {
     path: undefined,
     animations: "disabled",
     caret: "hide",
     fullPage: false
-  }).then((buffer) => compareScreenshot(name, buffer));
+  };
+  const buffer = selector
+    ? await page.locator(selector).screenshot(screenshotOptions)
+    : await page.screenshot(screenshotOptions);
+  compareScreenshot(name, buffer);
 }
 
 async function run() {
@@ -183,7 +187,7 @@ async function run() {
               elements.forEach((element) => { element.style.visibility = "hidden"; })
             );
           }
-          await capture(page, `${target.name}-${viewport.name}-${theme}`);
+          await capture(page, `${target.name}-${viewport.name}-${theme}`, target.captureSelector);
           await page.keyboard.press("Escape");
           await modal.waitFor({ state: "hidden" });
         }
