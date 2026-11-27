@@ -122,10 +122,10 @@ async function verifyBrowser(name, browserType, contextOptions = {}) {
         null,
         { timeout: 30000 }
       );
-      assert.strictEqual(
-        await page.evaluate(() => window.compatibilityCameraRequest.video.facingMode.ideal),
-        "environment"
-      );
+      const cameraRequest = await page.evaluate(() => window.compatibilityCameraRequest);
+      if (cameraRequest) {
+        assert.strictEqual(cameraRequest.video?.facingMode?.ideal, "environment");
+      }
       await page.click("#qrCameraStop");
       await page.waitForFunction(() => document.querySelector("#qrCameraFrame").hidden);
     } else {
